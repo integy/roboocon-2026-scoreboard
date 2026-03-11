@@ -229,6 +229,21 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.3);
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .kfs-cell::before {
+            content: attr(data-pos);
+            position: absolute;
+            top: 2px;
+            left: 4px;
+            font-size: 0.6rem;
+            opacity: 0.5;
+        }
+            justify-content: center;
             font-size: 1.5rem;
             cursor: pointer;
             transition: all 0.2s;
@@ -424,7 +439,10 @@
             <div class="score" id="redScore">0</div>
 
             <div class="kfs-tracker">
-                <h4>KFS Tic-Tac-Toe</h4>
+                <h4>KFS Tic-Tac-Toe (Click to place)</h4>
+                <div style="display:flex; justify-content:space-between; max-width:150px; margin:0 auto; font-size:0.6rem; color:#888; padding:0 5px;">
+                    <span>Top</span><span>Mid</span><span>Bot</span>
+                </div>
                 <div class="kfs-grid" id="redKFS">
                     <div class="kfs-cell" onclick="toggleKFS('red', 0)"></div>
                     <div class="kfs-cell" onclick="toggleKFS('red', 1)"></div>
@@ -479,7 +497,10 @@
             <div class="score" id="blueScore">0</div>
 
             <div class="kfs-tracker">
-                <h4>KFS Tic-Tac-Toe</h4>
+                <h4>KFS Tic-Tac-Toe (Click to place)</h4>
+                <div style="display:flex; justify-content:space-between; max-width:150px; margin:0 auto; font-size:0.6rem; color:#888; padding:0 5px;">
+                    <span>Top</span><span>Mid</span><span>Bot</span>
+                </div>
                 <div class="kfs-grid" id="blueKFS">
                     <div class="kfs-cell" onclick="toggleKFS('blue', 0)"></div>
                     <div class="kfs-cell" onclick="toggleKFS('blue', 1)"></div>
@@ -622,6 +643,7 @@
             
             for (let i = 0; i < 9; i++) {
                 cells[i].className = 'kfs-cell';
+                cells[i].setAttribute('data-pos', i + 1);
                 if (kfs[i] === 1) {
                     cells[i].classList.add(team);
                     cells[i].textContent = '🎯';
