@@ -35,91 +35,280 @@ let state = {
     redWeapon: 0, blueWeapon: 0,
     redPenalties: 0, bluePenalties: 0,
     matchNumber: 1, matchHistory: [], scoringLog: [],
-    timeRemaining: 180, prepTimeRemaining: 60,
+    // Prep Timer
+    prepTimeRemaining: 60,
+    prepTime: 60,
+    prepTimerPaused: true,
+    prepTimerFinished: false,
+    // Match Timer
+    matchTimeRemaining: 180,
+    matchTime: 180,
+    matchTimerPaused: true,
+    matchTimerFinished: false,
+    // Legacy (for compatibility)
     isPaused: true, gamePhase: 'prepare', selectedTeam: 'red',
-    prepTime: 60, matchTime: 180,
     undoStack: [], maxUndoSteps: 10
 };
-let timerInterval = null;
+let prepTimerInterval = null;
+let matchTimerInterval = null;
 const KFS_POINTS = [80, 80, 80, 40, 40, 40, 30, 30, 30];
 const WIN_COMBS = [[0,3,6], [1,4,7], [2,5,8], [0,4,8], [2,4,6]];
 
-// ==================== Timer Functions ====================
-function updateTimerDisplay() {
-    const timerEl = document.getElementById('timer');
-    const labelEl = document.getElementById('timerLabel');
-    let timeRemaining = state.gamePhase === 'prepare' ? state.prepTimeRemaining : state.timeRemaining;
-    let isPrepMode = state.gamePhase === 'prepare';
-    if (isPrepMode) timerEl.classList.add('prep-mode');
-    else timerEl.classList.remove('prep-mode');
+// ==================== Dual Timer Functions ====================
+
+// Preparation Timer Functions
+function updatePrepTimerDisplay() {
+    const timerEl = document.getElementById('prepTimer');
+    const statusEl = document.getElementById('prepTimerStatus');
+    const cardEl = document.getElementById('prepTimerCard');
+    const timeRemaining = state.prepTimeRemaining;
+    
     const mins = Math.floor(Math.max(0, timeRemaining) / 60);
     const secs = Math.max(0, timeRemaining) % 60;
     timerEl.textContent = `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+    
+    // Update status
     timerEl.classList.remove('warning', 'danger', 'overtime');
-    if (!isPrepMode) {
+    if (state.prepTimerFinished) {
+        statusEl.textContent = '準備完成！';
+        statusEl.className = 'timer-status finished';
+        cardEl.classList.remove('active', 'paused');
+    } else if (!state.prepTimerPaused) {
+        statusEl.textContent = '準備中...';
+        statusEl.className = 'timer-status running';
+        cardEl.classList.add('active');
+        cardEl.classList.remove('paused');
+        if (timeRemaining <= 30) timerEl.classList.add('danger');
+        else if (timeRemaining <= 60) timerEl.classList.add('warning');
+    } else if (state.prepTimerPaused && timeRemaining < state.prepTime) {
+        statusEl.textContent = '已暫停';
+        statusEl.className = 'timer-status paused';
+        cardEl.classList.add('paused');
+        cardEl.classList.remove('active');
+    } else {
+        statusEl.textContent = '等待開始';
+        statusEl.className = 'timer-status waiting';
+        cardEl.classList.remove('active', 'paused');
+    }
+    
+    updateCombinedStatusBadge();
+}
+
+function startPrepTimer() {
+    if (state.prepTimerFinished) return;
+    if (!state.prepTimerPaused) return; // Already running
+    
+    state.prepTimerPaused = false;
+    soundManager.playPrepStart();
+    
+    prepTimerInterval = setInterval(() => {
+        if (state.prepTimeRemaining > 0) {
+            state.prepTimeRemaining--;
+            updatePrepTimerDisplay();
+            saveState();
+        } else {
+            // Prep time finished
+            pausePrepTimer();
+            state.prepTimerFinished = true;
+            updatePrepTimerDisplay();
+            soundManager.playMatchStart();
+        }
+    }, 1000);
+    
+    updatePrepTimerDisplay();
+}
+
+function pausePrepTimer() {
+    if (state.prepTimerFinished) return;
+    if (state.prepTimerPaused) return; // Already paused
+    
+    state.prepTimerPaused = true;
+    clearInterval(prepTimerInterval);
+    updatePrepTimerDisplay();
+    saveState();
+}
+
+function resetPrepTimer() {
+    showConfirm('重置準備計時器', '確定要重置準備計時器嗎？', () => {
+        pausePrepTimer();
+        state.prepTimeRemaining = state.prepTime;
+        state.prepTimerFinished = false;
+        updatePrepTimerDisplay();
+        saveState();
+    });
+}
+
+function updatePrepTimeSetting() {
+    const select = document.getElementById('prepTimeSelect');
+    state.prepTime = parseInt(select.value);
+    if (!state.prepTimerFinished) {
+        state.prepTimeRemaining = state.prepTime;
+    }
+    updatePrepTimerDisplay();
+    saveState();
+}
+
+// Match Timer Functions
+function updateMatchTimerDisplay() {
+    const timerEl = document.getElementById('matchTimer');
+    const statusEl = document.getElementById('matchTimerStatus');
+    const cardEl = document.getElementById('matchTimerCard');
+    const timeRemaining = state.matchTimeRemaining;
+    
+    const mins = Math.floor(Math.max(0, timeRemaining) / 60);
+    const secs = Math.max(0, timeRemaining) % 60;
+    timerEl.textContent = `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+    
+    // Update status
+    timerEl.classList.remove('warning', 'danger', 'overtime');
+    if (state.matchTimerFinished) {
+        statusEl.textContent = '比賽結束！';
+        statusEl.className = 'timer-status finished';
+        cardEl.classList.remove('active', 'paused');
+    } else if (!state.matchTimerPaused) {
+        statusEl.textContent = '比賽中...';
+        statusEl.className = 'timer-status running';
+        cardEl.classList.add('active');
+        cardEl.classList.remove('paused');
         if (timeRemaining <= 0) timerEl.classList.add('overtime');
         else if (timeRemaining <= 30) timerEl.classList.add('danger');
         else if (timeRemaining <= 60) timerEl.classList.add('warning');
+    } else if (state.matchTimerPaused && timeRemaining < state.matchTime) {
+        statusEl.textContent = '已暫停';
+        statusEl.className = 'timer-status paused';
+        cardEl.classList.add('paused');
+        cardEl.classList.remove('active');
+    } else {
+        statusEl.textContent = '等待開始';
+        statusEl.className = 'timer-status waiting';
+        cardEl.classList.remove('active', 'paused');
     }
-    labelEl.textContent = isPrepMode ? '準備時間' : '比賽時間';
-    updateStatusBadge();
+    
+    updateCombinedStatusBadge();
 }
 
-function updateStatusBadge() {
+function startMatchTimer() {
+    if (state.matchTimerFinished) return;
+    if (!state.matchTimerPaused) return; // Already running
+    
+    state.matchTimerPaused = false;
+    soundManager.playMatchStart();
+    
+    matchTimerInterval = setInterval(() => {
+        if (state.matchTimeRemaining > 0) {
+            state.matchTimeRemaining--;
+            updateMatchTimerDisplay();
+            saveState();
+        } else {
+            // Match time finished
+            pauseMatchTimer();
+            state.matchTimerFinished = true;
+            updateMatchTimerDisplay();
+            soundManager.playEnd();
+        }
+    }, 1000);
+    
+    updateMatchTimerDisplay();
+}
+
+function pauseMatchTimer() {
+    if (state.matchTimerFinished) return;
+    if (state.matchTimerPaused) return; // Already paused
+    
+    state.matchTimerPaused = true;
+    clearInterval(matchTimerInterval);
+    updateMatchTimerDisplay();
+    saveState();
+}
+
+function resetMatchTimer() {
+    showConfirm('重置比賽計時器', '確定要重置比賽計時器嗎？', () => {
+        pauseMatchTimer();
+        state.matchTimeRemaining = state.matchTime;
+        state.matchTimerFinished = false;
+        updateMatchTimerDisplay();
+        saveState();
+    });
+}
+
+function updateMatchTimeSetting() {
+    const select = document.getElementById('matchTimeSelect');
+    state.matchTime = parseInt(select.value);
+    if (!state.matchTimerFinished) {
+        state.matchTimeRemaining = state.matchTime;
+    }
+    updateMatchTimerDisplay();
+    saveState();
+}
+
+// Combined status badge (for backward compatibility)
+function updateCombinedStatusBadge() {
     const badge = document.getElementById('statusBadge');
     badge.className = 'status-badge';
-    switch (state.gamePhase) {
-        case 'prepare': badge.textContent = '準備中'; badge.classList.add('prepare'); break;
-        case 'playing': badge.textContent = '比賽中'; badge.classList.add('playing'); break;
-        case 'paused': badge.textContent = '暫停'; badge.classList.add('paused'); break;
-        case 'ended': badge.textContent = '已結束'; badge.classList.add('ended'); break;
+    
+    if (state.matchTimerFinished) {
+        badge.textContent = '已結束';
+        badge.classList.add('ended');
+    } else if (!state.matchTimerPaused) {
+        badge.textContent = '比賽中';
+        badge.classList.add('playing');
+    } else if (!state.prepTimerPaused) {
+        badge.textContent = '準備中';
+        badge.classList.add('prepare');
+    } else if (state.prepTimerFinished && state.matchTimerPaused && !state.matchTimerFinished) {
+        badge.textContent = '準備完成';
+        badge.classList.add('paused');
+    } else {
+        badge.textContent = '準備中';
+        badge.classList.add('prepare');
     }
+}
+
+// Legacy timer functions (for backward compatibility)
+function updateTimerDisplay() {
+    // Redirect to combined display
+    updatePrepTimerDisplay();
+    updateMatchTimerDisplay();
+    updateCombinedStatusBadge();
 }
 
 function startTimer() {
-    if (state.gamePhase === 'ended') return;
-    if (!state.isPaused) return;
-    state.isPaused = false;
-    if (state.gamePhase === 'prepare') { state.gamePhase = 'playing'; soundManager.playMatchStart(); }
-    timerInterval = setInterval(() => {
-        if (state.gamePhase === 'prepare') {
-            if (state.prepTimeRemaining > 0) { state.prepTimeRemaining--; updateTimerDisplay(); }
-            else { pauseTimer(); state.gamePhase = 'playing'; state.timeRemaining = state.matchTime; updateTimerDisplay(); soundManager.playMatchStart(); startTimer(); }
-        } else if (state.gamePhase === 'playing') {
-            if (state.timeRemaining > 0) { state.timeRemaining--; updateTimerDisplay(); }
-            else { pauseTimer(); state.gamePhase = 'ended'; updateTimerDisplay(); soundManager.playEnd(); }
-        }
-    }, 1000);
-    updateStatusBadge();
+    // Legacy function - redirects to prep timer
+    if (!state.prepTimerFinished) {
+        startPrepTimer();
+    } else {
+        startMatchTimer();
+    }
 }
 
 function pauseTimer() {
-    if (state.gamePhase === 'prepare' || state.gamePhase === 'playing') {
-        state.isPaused = true;
-        clearInterval(timerInterval);
-        if (state.gamePhase === 'playing') state.gamePhase = 'paused';
-        updateStatusBadge();
+    // Pause whichever timer is running
+    if (!state.prepTimerPaused && !state.prepTimerFinished) {
+        pausePrepTimer();
+    } else if (!state.matchTimerPaused && !state.matchTimerFinished) {
+        pauseMatchTimer();
     }
 }
 
 function resetTimer() {
-    showConfirm('重置計時器', '確定要重置計時器嗎？', () => {
-        pauseTimer();
-        state.gamePhase = 'prepare';
+    // Show options to reset
+    showConfirm('重置計時器', '選擇要重置邊個計時器？', () => {
+        // Reset both timers
+        pausePrepTimer();
+        pauseMatchTimer();
         state.prepTimeRemaining = state.prepTime;
-        state.timeRemaining = state.matchTime;
+        state.prepTimerFinished = false;
+        state.matchTimeRemaining = state.matchTime;
+        state.matchTimerFinished = false;
         updateTimerDisplay();
+        saveState();
     });
 }
 
 function updateTimerSettings() {
-    const prepSelect = document.getElementById('prepTimeSelect');
-    const matchSelect = document.getElementById('matchTimeSelect');
-    state.prepTime = parseInt(prepSelect.value);
-    state.matchTime = parseInt(matchSelect.value);
-    if (state.gamePhase === 'prepare') state.prepTimeRemaining = state.prepTime;
-    updateTimerDisplay();
-    saveState();
+    // Legacy function
+    updatePrepTimeSetting();
+    updateMatchTimeSetting();
 }
 
 // ==================== KFS Functions ====================
@@ -169,8 +358,11 @@ function checkKungFuMaster(team) {
             const cells = document.getElementById(team + 'KFS').children;
             comb.forEach(i => cells[i].classList.add('kungfu'));
             const teamName = document.getElementById(team + 'Name').value;
+            // Pause both timers
+            pausePrepTimer();
+            pauseMatchTimer();
+            state.matchTimerFinished = true;
             showWinner(teamName + ' - KUNG FU MASTER! 🎯🎯🎯');
-            pauseTimer();
             return;
         }
     }
@@ -254,9 +446,16 @@ function showScoreFloat(team, points) {
 
 // ==================== Logging ====================
 function logScore(team, type, points, description) {
-    const timeLeft = state.gamePhase === 'prepare' ? state.prepTimeRemaining : state.timeRemaining;
-    const mins = Math.floor(timeLeft / 60);
-    const secs = timeLeft % 60;
+    // Use match timer if running, otherwise prep timer
+    let timeRemaining;
+    if (!state.matchTimerFinished || state.matchTimeRemaining === state.matchTime) {
+        timeRemaining = state.matchTimeRemaining;
+    } else {
+        timeRemaining = state.prepTimeRemaining;
+    }
+    
+    const mins = Math.floor(timeRemaining / 60);
+    const secs = timeRemaining % 60;
     const timeStr = `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
     const logEntry = { time: timeStr, team: team, type: type, points: points, description: description, timestamp: Date.now() };
     state.scoringLog.push(logEntry);
@@ -350,19 +549,61 @@ function toggleTeam() { selectTeam(state.selectedTeam === 'red' ? 'blue' : 'red'
 function handleKeyboard(e) {
     if (e.target.tagName === 'INPUT') return;
     switch (e.key) {
-        case ' ': e.preventDefault(); if (state.isPaused) startTimer(); else pauseTimer(); break;
-        case 'r': case 'R': resetTimer(); break;
-        case 't': case 'T': toggleTeam(); break;
-        case '1': addPlacement(state.selectedTeam, 1); break;
-        case '2': addPlacement(state.selectedTeam, 5); break;
-        case '3': addPlacement(state.selectedTeam, 10); break;
+        case ' ': 
+            e.preventDefault(); 
+            // Pause whichever timer is running
+            if (!state.prepTimerPaused && !state.prepTimerFinished) {
+                pausePrepTimer();
+            } else if (!state.matchTimerPaused && !state.matchTimerFinished) {
+                pauseMatchTimer();
+            } else {
+                // If all paused, resume the first unfinished timer
+                if (!state.prepTimerFinished) startPrepTimer();
+                else if (!state.matchTimerFinished) startMatchTimer();
+            }
+            break;
+        case 'p': case 'P':
+            // Prep timer controls
+            if (!state.prepTimerPaused && !state.prepTimerFinished) {
+                pausePrepTimer();
+            } else if (state.prepTimerPaused && !state.prepTimerFinished) {
+                startPrepTimer();
+            }
+            break;
+        case 'm': case 'M':
+            // Match timer controls
+            if (!state.matchTimerPaused && !state.matchTimerFinished) {
+                pauseMatchTimer();
+            } else if (state.matchTimerPaused && !state.matchTimerFinished) {
+                startMatchTimer();
+            }
+            break;
+        case 'r': case 'R': 
+            // Reset timer - show options
+            resetTimer(); 
+            break;
+        case 't': case 'T': 
+            toggleTeam(); 
+            break;
+        case '1': 
+            addPlacement(state.selectedTeam, 1); 
+            break;
+        case '2': 
+            addPlacement(state.selectedTeam, 5); 
+            break;
+        case '3': 
+            addPlacement(state.selectedTeam, 10); 
+            break;
     }
 }
 
 // ==================== Match Control ====================
 function declareWinner() {
     showConfirm('宣佈勝者', '確定要宣佈今場比賽既勝者嗎？', () => {
-        pauseTimer();
+        // Pause all timers
+        pausePrepTimer();
+        pauseMatchTimer();
+        
         const redTotal = parseInt(document.getElementById('redScore').textContent);
         const blueTotal = parseInt(document.getElementById('blueScore').textContent);
         const redName = document.getElementById('redName').value;
@@ -371,11 +612,14 @@ function declareWinner() {
         if (redTotal > blueTotal) message = `🏆 勝利者: ${redName}！(${redTotal} vs ${blueTotal})`;
         else if (blueTotal > redTotal) message = `🏆 勝利者: ${blueName}！(${blueTotal} vs ${redTotal})`;
         else message = '🤝 比賽平手！';
-        state.gamePhase = 'ended';
+        
+        // Mark match as finished
+        state.matchTimerFinished = true;
+        
         showWinner(message);
         saveToHistory();
         soundManager.playEnd();
-        updateStatusBadge();
+        updateCombinedStatusBadge();
     });
 }
 
@@ -389,14 +633,22 @@ function showWinner(message) {
 
 function hardReset() {
     showConfirm('重置所有', '確定要重置所有嘢嗎？呢個會清除所有分數、犯規、同歷史記錄！', () => {
+        // Stop all timers
+        pausePrepTimer();
+        pauseMatchTimer();
+        
         state = {
             redScore: 0, blueScore: 0, redKFS: Array(9).fill(0), blueKFS: Array(9).fill(0),
             redKFSCollection: 0, blueKFSCollection: 0, redWeapon: 0, blueWeapon: 0,
             redPenalties: 0, bluePenalties: 0, matchNumber: 1, matchHistory: [], scoringLog: [],
-            timeRemaining: state.matchTime, prepTimeRemaining: state.prepTime,
+            prepTimeRemaining: state.prepTime, prepTime: state.prepTime,
+            prepTimerPaused: true, prepTimerFinished: false,
+            matchTimeRemaining: state.matchTime, matchTime: state.matchTime,
+            matchTimerPaused: true, matchTimerFinished: false,
             isPaused: true, gamePhase: 'prepare', selectedTeam: 'red',
-            prepTime: state.prepTime, matchTime: state.matchTime, undoStack: [], maxUndoSteps: 10
+            undoStack: [], maxUndoSteps: 10
         };
+        
         document.getElementById('redScore').textContent = '0';
         document.getElementById('blueScore').textContent = '0';
         document.getElementById('redKFSCollection').textContent = '0';
@@ -408,15 +660,18 @@ function hardReset() {
         document.getElementById('matchNumber').value = '1';
         document.getElementById('redName').value = '火之龍';
         document.getElementById('blueName').value = '征龍';
+        
         updateScoringLogDisplay();
         document.getElementById('teamRed').classList.remove('winner');
         document.getElementById('teamBlue').classList.remove('winner');
         document.getElementById('winnerBanner').classList.remove('show');
+        
         renderKFS('red');
         renderKFS('blue');
         updateTimerDisplay();
         updateHistoryDisplay();
         updateUndoButton();
+        
         saveState();
         localStorage.removeItem('robocon2026');
         alert('已重置所有嘢！');
@@ -430,12 +685,18 @@ function newMatch() {
 
 function startNewMatch() {
     if (state.redScore > 0 || state.blueScore > 0) saveToHistory();
+    
+    // Stop all timers first
+    pausePrepTimer();
+    pauseMatchTimer();
+    
     state.redScore = 0; state.blueScore = 0;
     state.redKFS = Array(9).fill(0); state.blueKFS = Array(9).fill(0);
     state.redKFSCollection = 0; state.blueKFSCollection = 0;
     state.redWeapon = 0; state.blueWeapon = 0;
     state.redPenalties = 0; state.bluePenalties = 0;
     state.scoringLog = []; state.undoStack = [];
+    
     document.getElementById('redScore').textContent = '0';
     document.getElementById('blueScore').textContent = '0';
     document.getElementById('redKFSCollection').textContent = '0';
@@ -444,16 +705,23 @@ function startNewMatch() {
     document.getElementById('blueWeapon').textContent = '0';
     document.getElementById('matchNumber').value = state.matchNumber + 1;
     state.matchNumber++;
-    pauseTimer();
-    state.gamePhase = 'prepare';
+    
+    // Reset both timers
     state.prepTimeRemaining = state.prepTime;
-    state.timeRemaining = state.matchTime;
+    state.prepTimerPaused = true;
+    state.prepTimerFinished = false;
+    state.matchTimeRemaining = state.matchTime;
+    state.matchTimerPaused = true;
+    state.matchTimerFinished = false;
+    
     renderKFS('red');
     renderKFS('blue');
     updateTimerDisplay();
+    
     document.getElementById('teamRed').classList.remove('winner');
     document.getElementById('teamBlue').classList.remove('winner');
     document.getElementById('winnerBanner').classList.remove('show');
+    
     updateUndoButton();
     saveState();
     soundManager.playPrepStart();
@@ -549,6 +817,24 @@ function loadState() {
     const saved = localStorage.getItem('robocon2026');
     if (saved) {
         state = JSON.parse(saved);
+        
+        // Handle legacy state migration
+        if (state.timeRemaining !== undefined) {
+            // Old format - migrate to new format
+            state.matchTimeRemaining = state.timeRemaining;
+            state.matchTimerPaused = state.isPaused;
+            state.matchTimerFinished = state.gamePhase === 'ended';
+            state.prepTimerPaused = state.isPaused;
+            state.prepTimerFinished = state.gamePhase === 'playing' || state.gamePhase === 'ended';
+            delete state.timeRemaining;
+        }
+        
+        // Ensure new fields exist
+        if (state.prepTimerPaused === undefined) state.prepTimerPaused = true;
+        if (state.prepTimerFinished === undefined) state.prepTimerFinished = false;
+        if (state.matchTimerPaused === undefined) state.matchTimerPaused = true;
+        if (state.matchTimerFinished === undefined) state.matchTimerFinished = false;
+        
         const redTotal = state.redScore + (state.redKFSCollection*10) + (state.redWeapon*10);
         const blueTotal = state.blueScore + (state.blueKFSCollection*10) + (state.blueWeapon*10);
         document.getElementById('redScore').textContent = redTotal;
@@ -562,9 +848,11 @@ function loadState() {
         document.getElementById('matchNumber').value = state.matchNumber;
         document.getElementById('redName').value = state.redName || '火之龍';
         document.getElementById('blueName').value = state.blueName || '征龍';
+        
         // Update timer settings dropdowns
         document.getElementById('prepTimeSelect').value = state.prepTime;
         document.getElementById('matchTimeSelect').value = state.matchTime;
+        
         renderKFS('red');
         renderKFS('blue');
         updateHistoryDisplay();
@@ -579,3 +867,12 @@ function loadState() {
 document.addEventListener('keydown', handleKeyboard);
 loadState();
 setInterval(saveState, 5000);
+
+// Add any missing legacy function stubs for compatibility
+function toggleTotalTimer() {
+    // This was a planned feature - show a simple alert for now
+    const totalTime = (state.matchTime - state.matchTimeRemaining) + (state.prepTime - state.prepTimeRemaining);
+    const mins = Math.floor(totalTime / 60);
+    const secs = totalTime % 60;
+    alert(`總已用時間: ${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`);
+}

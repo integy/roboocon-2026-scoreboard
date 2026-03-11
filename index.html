@@ -12,27 +12,61 @@
         <div class="subtitle">雙手柄遙控機器人比賽計分系統</div>
     </div>
 
-    <!-- 計時器設定 -->
-    <div class="timer-settings">
-        <div class="setting-group">
-            <label>⚙️ 準備時間:</label>
-            <select id="prepTimeSelect" onchange="updateTimerSettings()">
-                <option value="30">30 秒</option>
-                <option value="60" selected>60 秒</option>
-                <option value="90">90 秒</option>
-            </select>
+    <!-- 兩個獨立計時器 -->
+    <div class="dual-timers">
+        <!-- 準備時間計時器 -->
+        <div class="timer-card prep-timer" id="prepTimerCard">
+            <div class="timer-header">
+                <span class="timer-icon">⏱️</span>
+                <span class="timer-title">準備時間</span>
+            </div>
+            <div class="timer-display" id="prepTimer">00:00</div>
+            <div class="timer-status" id="prepTimerStatus">等待開始</div>
+            <div class="timer-controls">
+                <button class="btn btn-green" onclick="startPrepTimer()">▶ 開始準備</button>
+                <button class="btn btn-orange" onclick="pausePrepTimer()">⏸ 暫停</button>
+                <button class="btn btn-blue" onclick="resetPrepTimer()">↺ 重置</button>
+            </div>
+            <div class="timer-setting">
+                <label>時長:</label>
+                <select id="prepTimeSelect" onchange="updatePrepTimeSetting()">
+                    <option value="30">30 秒</option>
+                    <option value="60" selected>60 秒</option>
+                    <option value="90">90 秒</option>
+                </select>
+            </div>
         </div>
-        <div class="setting-group">
-            <label>⚙️ 比賽時長:</label>
-            <select id="matchTimeSelect" onchange="updateTimerSettings()">
-                <option value="60">60 秒</option>
-                <option value="90">90 秒</option>
-                <option value="180" selected>180 秒 (3分鐘)</option>
-            </select>
+
+        <!-- 比賽時間計時器 -->
+        <div class="timer-card match-timer" id="matchTimerCard">
+            <div class="timer-header">
+                <span class="timer-icon">🏁</span>
+                <span class="timer-title">比賽時間</span>
+            </div>
+            <div class="timer-display" id="matchTimer">00:00</div>
+            <div class="timer-status" id="matchTimerStatus">等待開始</div>
+            <div class="timer-controls">
+                <button class="btn btn-green" onclick="startMatchTimer()">▶ 開始比賽</button>
+                <button class="btn btn-orange" onclick="pauseMatchTimer()">⏸ 暫停</button>
+                <button class="btn btn-blue" onclick="resetMatchTimer()">↺ 重置</button>
+            </div>
+            <div class="timer-setting">
+                <label>時長:</label>
+                <select id="matchTimeSelect" onchange="updateMatchTimeSetting()">
+                    <option value="60">60 秒</option>
+                    <option value="90">90 秒</option>
+                    <option value="180" selected>180 秒 (3分鐘)</option>
+                </select>
+            </div>
         </div>
     </div>
 
-    <!-- 比賽狀態指示器 -->
+    <!-- 總時間顯示 (可選) -->
+    <div class="total-timer-section">
+        <button class="btn btn-gold" onclick="toggleTotalTimer()">📊 顯示總時間</button>
+    </div>
+
+    <!-- 舊版單一計時器樣式 (已棄用，但保留結構以便過渡) -->
     <div class="status-indicator">
         <span class="status-badge" id="statusBadge">準備中</span>
     </div>
@@ -75,23 +109,23 @@
         <button class="btn btn-blue" onclick="exportScore()">📤 匯出</button>
     </div>
 
-    <div class="timer-section">
+    <!-- 隱藏的舊計時器 (向後兼容) -->
+    <div class="timer-section" style="display:none;">
         <div class="timer" id="timer">00:00</div>
         <div class="timer-label" id="timerLabel">準備時間</div>
-        <div class="timer-controls">
-            <button class="btn btn-green" onclick="startTimer()">▶ 開始</button>
-            <button class="btn btn-orange" onclick="pauseTimer()">⏸ 暫停</button>
-            <button class="btn btn-blue" onclick="resetTimer()">↺ 重置</button>
-        </div>
-        <div class="keyboard-hints">
-            <span>⌨️ 快捷鍵:</span>
-            <span>[1] +1分</span>
-            <span>[2] +5分</span>
-            <span>[3] +10分</span>
-            <span>[Space] 開始/暫停</span>
-            <span>[R] 重置</span>
-            <span>[T] 切換隊伍</span>
-        </div>
+    </div>
+
+    <!-- 鍵盤快捷鍵提示 -->
+    <div class="keyboard-hints">
+        <span>⌨️ 快捷鍵:</span>
+        <span>[1] +1分</span>
+        <span>[2] +5分</span>
+        <span>[3] +10分</span>
+        <span>[P] 準備計時器</span>
+        <span>[M] 比賽計時器</span>
+        <span>[Space] 暫停所有</span>
+        <span>[R] 重置</span>
+        <span>[T] 切換隊伍</span>
     </div>
 
     <div class="scoreboard">
