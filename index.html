@@ -372,10 +372,82 @@
         }
 
         @media (max-width: 600px) {
-            .scoreboard { flex-direction: column; }
-            .team-card { min-width: 100%; }
-            .score { font-size: 3rem; }
-            .header h1 { font-size: 1.5rem; }
+            body { padding: 10px; }
+            .header h1 { font-size: 1.3rem; }
+            .header .subtitle { font-size: 0.75rem; }
+            
+            .rules-panel { padding: 10px; margin-bottom: 10px; }
+            .rules-panel h3 { font-size: 0.9rem; }
+            .rules-grid { grid-template-columns: 1fr 1fr; gap: 5px; }
+            .rule-item { padding: 5px 8px; font-size: 0.7rem; }
+            
+            .match-info { padding: 8px 10px; gap: 8px; }
+            .match-info input { font-size: 0.9rem; padding: 3px; }
+            
+            .timer { font-size: 2.5rem; }
+            .timer-controls { gap: 5px; }
+            .timer-controls .btn { padding: 8px 12px; font-size: 0.8rem; }
+            
+            .scoreboard { gap: 10px; margin-bottom: 10px; }
+            .team-card { 
+                min-width: 100%; 
+                padding: 12px; 
+                border-radius: 12px;
+            }
+            .team-name { font-size: 1.1rem; }
+            .score { font-size: 2.5rem; margin: 5px 0; }
+            
+            .kfs-tracker h4 { font-size: 0.8rem; }
+            .kfs-grid { max-width: 120px; gap: 3px; }
+            .kfs-cell { font-size: 1.2rem; }
+            
+            .scoring-section { padding: 8px; margin: 10px 0; }
+            .scoring-section h4 { font-size: 0.75rem; }
+            .scoring-btns { gap: 3px; }
+            .scoring-btns .btn { padding: 6px 8px; font-size: 0.7rem; }
+            
+            .collection-tracker { gap: 8px; }
+            .collection-item { font-size: 0.8rem; }
+            .collection-item .btn { padding: 4px 8px; font-size: 0.7rem; }
+            .collection-count { font-size: 1rem; min-width: 25px; }
+            
+            .penalty-btn { margin-top: 8px; }
+            
+            .controls { gap: 8px; margin-top: 10px; }
+            .controls .btn { padding: 10px 14px; font-size: 0.85rem; }
+            
+            .winner-banner { 
+                padding: 20px 30px; 
+                font-size: 1.3rem; 
+            }
+            
+            .history-panel { padding: 10px; margin-top: 15px; }
+            .history-panel h3 { font-size: 0.9rem; }
+            .history-item { padding: 6px; font-size: 0.8rem; }
+        }
+        
+        @media (max-width: 400px) {
+            .rules-grid { grid-template-columns: 1fr; }
+            .kfs-grid { max-width: 100px; }
+            .score { font-size: 2rem; }
+            .timer { font-size: 2rem; }
+            .header h1 { font-size: 1.1rem; }
+        }
+        
+        /* Touch-friendly buttons */
+        .btn, .kfs-cell {
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        
+        .btn:active {
+            transform: scale(0.95);
+        }
+        
+        /* Prevent text selection on scoreboard */
+        .scoreboard, .team-card, .kfs-grid {
+            -webkit-user-select: none;
+            user-select: none;
         }
     </style>
 </head>
