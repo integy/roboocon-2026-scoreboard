@@ -565,7 +565,7 @@
         <!-- 紅隊 -->
         <div class="team-card red" id="teamRed">
             <div class="team-name">紅隊</div>
-            <input type="text" id="redName" value="紅隊" style="font-size:1rem; margin-bottom:10px; width:70%;">
+            <input type="text" id="redName" value="火之龍" style="font-size:1rem; margin-bottom:10px; width:70%;">
             <div class="score" id="redScore">0</div>
 
             <div class="kfs-tracker">
@@ -623,7 +623,7 @@
         <!-- 藍隊 -->
         <div class="team-card blue" id="teamBlue">
             <div class="team-name">藍隊</div>
-            <input type="text" id="blueName" value="藍隊" style="font-size:1rem; margin-bottom:10px; width:70%;">
+            <input type="text" id="blueName" value="征龍" style="font-size:1rem; margin-bottom:10px; width:70%;">
             <div class="score" id="blueScore">0</div>
 
             <div class="kfs-tracker">
@@ -852,7 +852,7 @@
             
             logEl.innerHTML = state.scoringLog.map(entry => {
                 const teamColor = entry.team === 'red' ? 'var(--red-team)' : 'var(--blue-team)';
-                const teamName = entry.team === 'red' ? '紅隊' : '藍隊';
+                const teamName = entry.team === 'red' ? '火之龍' : '征龍';
                 const pointsColor = entry.points > 0 ? 'var(--green)' : 'var(--red-team)';
                 return `
                     <div class="log-entry">
@@ -877,13 +877,13 @@
             text += `場次: ${state.matchNumber}\n\n`;
             
             state.scoringLog.forEach(entry => {
-                const teamName = entry.team === 'red' ? '紅隊' : '藍隊';
+                const teamName = entry.team === 'red' ? '火之龍' : '征龍';
                 text += `[${entry.time}] ${teamName} ${entry.description} ${entry.points > 0 ? '+' : ''}${entry.points}\n`;
             });
             
             text += `\n========================\n`;
-            text += `紅隊總分: ${document.getElementById('redScore').textContent}\n`;
-            text += `藍隊總分: ${document.getElementById('blueScore').textContent}\n`;
+            text += `火之龍總分: ${document.getElementById('redScore').textContent}\n`;
+            text += `征龍總分: ${document.getElementById('blueScore').textContent}\n`;
             
             navigator.clipboard.writeText(text).then(() => {
                 alert('得分記錄已複製到剪貼簿！');
@@ -1102,8 +1102,8 @@
             document.getElementById('redPenalties').textContent = '0';
             document.getElementById('bluePenalties').textContent = '0';
             document.getElementById('matchNumber').value = '1';
-            document.getElementById('redName').value = '紅隊';
-            document.getElementById('blueName').value = '藍隊';
+            document.getElementById('redName').value = '火之龍';
+            document.getElementById('blueName').value = '征龍';
             
             // Clear scoring log display
             updateScoringLogDisplay();
@@ -1244,8 +1244,8 @@
                 document.getElementById('redPenalties').textContent = state.redPenalties || 0;
                 document.getElementById('bluePenalties').textContent = state.bluePenalties || 0;
                 document.getElementById('matchNumber').value = state.matchNumber;
-                document.getElementById('redName').value = state.redName || '紅隊';
-                document.getElementById('blueName').value = state.blueName || '藍隊';
+                document.getElementById('redName').value = state.redName || '火之龍';
+                document.getElementById('blueName').value = state.blueName || '征龍';
                 
                 renderKFS('red');
                 renderKFS('blue');
