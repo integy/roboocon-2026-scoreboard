@@ -579,6 +579,10 @@
 
         let timerInterval = null;
 
+        // KFS position to points mapping
+        // Positions: 1-3 = Top (80pts), 4-6 = Mid (40pts), 7-9 = Bot (30pts)
+        const KFS_POINTS = [80, 80, 80, 40, 40, 40, 30, 30, 30];
+
         // KFS Winning combinations - VERTICAL or DIAGONAL only (NOT horizontal!)
         const WIN_COMBS = [
             // Vertical (columns)
@@ -634,7 +638,31 @@
             const kfs = team === 'red' ? state.redKFS : state.blueKFS;
             kfs[index] = kfs[index] ? 0 : 1;
             renderKFS(team);
+            calculateKFSScore(team);
             checkKungFuMaster(team);
+        }
+
+        function calculateKFSScore(team) {
+            const kfs = team === 'red' ? state.redKFS : state.blueKFS;
+            let placementScore = 0;
+            
+            // Calculate points based on where KFS are placed
+            for (let i = 0; i < 9; i++) {
+                if (kfs[i] === 1) {
+                    placementScore += KFS_POINTS[i];
+                }
+            }
+            
+            if (team === 'red') {
+                state.redScore = placementScore;
+            } else {
+                state.blueScore = placementScore;
+            }
+            
+            document.getElementById(team + 'Score').textContent = placementScore + 
+                (team === 'red' ? state.redKFSCollection * 10 + state.redWeapon * 10 : 
+                                  state.blueKFSCollection * 10 + state.blueWeapon * 10);
+            saveState();
         }
 
         function renderKFS(team) {
