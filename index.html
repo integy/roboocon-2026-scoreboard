@@ -373,6 +373,168 @@
             max-width: 600px;
         }
         
+        /* Analysis Panel */
+        .analysis-panel {
+            display: none;
+            background: var(--bg-card);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 15px;
+            width: 100%;
+            max-width: 800px;
+        }
+        
+        .analysis-panel.show {
+            display: block;
+        }
+        
+        .analysis-panel h3 {
+            color: var(--gold);
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .analysis-controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .chart-container {
+            margin: 15px 0;
+        }
+        
+        .chart-title {
+            font-size: 1rem;
+            color: var(--accent);
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        /* Bar Chart */
+        .bar-chart {
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-end;
+            height: 200px;
+            padding: 10px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+        }
+        
+        .bar-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+        }
+        
+        .bar {
+            width: 40px;
+            background: linear-gradient(to top, var(--red-team), var(--blue-team));
+            border-radius: 5px 5px 0 0;
+            transition: height 0.5s;
+            position: relative;
+        }
+        
+        .bar.red { background: var(--red-team); }
+        .bar.blue { background: var(--blue-team); }
+        
+        .bar-label {
+            margin-top: 5px;
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+        
+        .bar-value {
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        
+        /* Timeline Chart */
+        .timeline-chart {
+            padding: 10px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .timeline-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            font-size: 0.85rem;
+        }
+        
+        .timeline-item:last-child {
+            border-bottom: none;
+        }
+        
+        .timeline-time {
+            font-family: 'Courier New', monospace;
+            color: var(--accent);
+            min-width: 50px;
+        }
+        
+        .timeline-bar-container {
+            flex: 1;
+            height: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            margin: 0 10px;
+            position: relative;
+        }
+        
+        .timeline-bar {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+        
+        .timeline-bar.red { background: var(--red-team); }
+        .timeline-bar.blue { background: var(--blue-team); }
+        
+        .timeline-score {
+            font-weight: bold;
+            min-width: 40px;
+            text-align: right;
+        }
+        
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .stat-card {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--accent);
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+            color: #aaa;
+            margin-top: 5px;
+        }
+        
         .scoring-log-panel h3 {
             color: var(--accent);
             margin-bottom: 10px;
@@ -693,10 +855,28 @@
         <div class="log-controls">
             <button class="btn btn-blue" onclick="exportScoringLog()">📤 匯出</button>
             <button class="btn btn-orange" onclick="importScoringLog()">📥 匯入</button>
+            <button class="btn btn-gold" onclick="showAnalysis()">📊 分析</button>
             <button class="btn btn-red" onclick="clearScoringLog()">🗑️ 清除</button>
         </div>
         <div id="scoringLog">
             <div style="text-align:center; opacity:0.5; padding:10px;">暫時沒有記錄</div>
+        </div>
+    </div>
+
+    <!-- Analysis Panel -->
+    <div class="analysis-panel" id="analysisPanel">
+        <h3>📊 數據分析</h3>
+        
+        <div class="analysis-controls">
+            <button class="btn btn-green" onclick="runAnalysis()">🔄 用現有數據分析</button>
+            <button class="btn btn-orange" onclick="importForAnalysis()">📥 匯入數據分析</button>
+            <button class="btn btn-blue" onclick="closeAnalysis()">✖ 關閉</button>
+        </div>
+        
+        <div id="analysisContent">
+            <div style="text-align:center; opacity:0.5; padding:20px;">
+                請選擇分析方式...
+            </div>
         </div>
     </div>
 
@@ -916,6 +1096,199 @@
             state.scoringLog = [];
             updateScoringLogDisplay();
             saveState();
+        }
+
+        // Analysis Functions
+        function showAnalysis() {
+            document.getElementById('analysisPanel').classList.add('show');
+            runAnalysis();
+        }
+
+        function closeAnalysis() {
+            document.getElementById('analysisPanel').classList.remove('show');
+        }
+
+        function importForAnalysis() {
+            const text = prompt('請貼上得分記錄 (JSON format):');
+            if (!text) return;
+            
+            try {
+                const data = JSON.parse(text);
+                if (Array.isArray(data)) {
+                    analyzeData(data);
+                } else {
+                    alert('格式錯誤！');
+                }
+            } catch (e) {
+                alert('匯入失敗，請確認格式正確！');
+            }
+        }
+
+        function runAnalysis() {
+            if (state.scoringLog.length === 0) {
+                document.getElementById('analysisContent').innerHTML = 
+                    '<div style="text-align:center; opacity:0.5; padding:20px;">暫時沒有數據，請先記錄或匯入數據</div>';
+                return;
+            }
+            analyzeData(state.scoringLog);
+        }
+
+        function analyzeData(log) {
+            // Calculate stats
+            let redTotal = 0, blueTotal = 0;
+            let redEvents = 0, blueEvents = 0;
+            let redKFS = 0, blueKFS = 0;
+            let redCollection = 0, blueCollection = 0;
+            let redWeapon = 0, blueWeapon = 0;
+            
+            // Build timeline with running scores
+            let timeline = [];
+            let redScore = 0, blueScore = 0;
+            
+            log.forEach(entry => {
+                if (entry.team === 'red') {
+                    redScore += entry.points;
+                    redEvents++;
+                    if (entry.type === 'KFS') redKFS += Math.abs(entry.points);
+                    if (entry.type === 'Collection') redCollection += Math.abs(entry.points);
+                    if (entry.type === 'Weapon') redWeapon += Math.abs(entry.points);
+                } else {
+                    blueScore += entry.points;
+                    blueEvents++;
+                    if (entry.type === 'KFS') blueKFS += Math.abs(entry.points);
+                    if (entry.type === 'Collection') blueCollection += Math.abs(entry.points);
+                    if (entry.type === 'Weapon') blueWeapon += Math.abs(entry.points);
+                }
+                timeline.push({...entry, redScore, blueScore});
+            });
+            
+            redTotal = redScore;
+            blueTotal = blueScore;
+            
+            const maxScore = Math.max(redTotal, blueTotal, 1);
+            
+            // Generate HTML
+            let html = '';
+            
+            // Stats Grid
+            html += `
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" style="color:var(--red-team)">${redTotal}</div>
+                        <div class="stat-label">火之龍 總分</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" style="color:var(--blue-team)">${blueTotal}</div>
+                        <div class="stat-label">征龍 總分</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${redEvents + blueEvents}</div>
+                        <div class="stat-label">總事件數</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${log.length}</div>
+                        <div class="stat-label">記錄條數</div>
+                    </div>
+                </div>
+            `;
+            
+            // Score Comparison Bar Chart
+            html += `
+                <div class="chart-container">
+                    <div class="chart-title">📊 比分對比</div>
+                    <div class="bar-chart">
+                        <div class="bar-group">
+                            <div class="bar red" style="height:${(redTotal/maxScore)*180}px">
+                                <span class="bar-value" style="color:var(--red-team)">${redTotal}</span>
+                            </div>
+                            <div class="bar-label">火之龍</div>
+                        </div>
+                        <div class="bar-group">
+                            <div class="bar blue" style="height:${(blueTotal/maxScore)*180}px">
+                                <span class="bar-value" style="color:var(--blue-team)">${blueTotal}</span>
+                            </div>
+                            <div class="bar-label">征龍</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Category Breakdown
+            html += `
+                <div class="chart-container">
+                    <div class="chart-title">📈 分類得分</div>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" style="color:var(--red-team)">${redKFS}</div>
+                            <div class="stat-label">火之龍 KFS</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" style="color:var(--blue-team)">${blueKFS}</div>
+                            <div class="stat-label">征龍 KFS</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" style="color:var(--red-team)">${redCollection}</div>
+                            <div class="stat-label">火之龍 Collection</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" style="color:var(--blue-team)">${blueCollection}</div>
+                            <div class="stat-label">征龍 Collection</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" style="color:var(--red-team)">${redWeapon}</div>
+                            <div class="stat-label">火之龍 Weapon</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" style="color:var(--blue-team)">${blueWeapon}</div>
+                            <div class="stat-label">征龍 Weapon</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Timeline Chart
+            if (timeline.length > 0) {
+                html += `
+                    <div class="chart-container">
+                        <div class="chart-title">📅 得分時間線</div>
+                        <div class="timeline-chart">
+                `;
+                
+                timeline.forEach(entry => {
+                    const max = Math.max(entry.redScore, entry.blueScore, 1);
+                    const redWidth = (entry.redScore / max) * 100;
+                    const blueWidth = (entry.blueScore / max) * 100;
+                    const teamColor = entry.team === 'red' ? 'var(--red-team)' : 'var(--blue-team)';
+                    const teamName = entry.team === 'red' ? '火之龍' : '征龍';
+                    
+                    html += `
+                        <div class="timeline-item">
+                            <span class="timeline-time">${entry.time}</span>
+                            <span style="color:${teamColor}; min-width:40px;">${teamName}</span>
+                            <div class="timeline-bar-container">
+                                <div class="timeline-bar ${entry.team}" style="width:${entry.team === 'red' ? redWidth : blueWidth}%"></div>
+                            </div>
+                            <span class="timeline-score" style="color:${teamColor}">${entry.points > 0 ? '+' : ''}${entry.points}</span>
+                        </div>
+                    `;
+                });
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Winner
+            if (redTotal > blueTotal) {
+                html += `<div style="text-align:center; margin-top:20px; font-size:1.5rem; color:var(--gold)">🏆 勝利者: 火之龍！</div>`;
+            } else if (blueTotal > redTotal) {
+                html += `<div style="text-align:center; margin-top:20px; font-size:1.5rem; color:var(--gold)">🏆 勝利者: 征龍！</div>`;
+            } else {
+                html += `<div style="text-align:center; margin-top:20px; font-size:1.5rem; color:var(--gold)">🤝 平手！</div>`;
+            }
+            
+            document.getElementById('analysisContent').innerHTML = html;
         }
 
         function renderKFS(team) {
