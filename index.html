@@ -489,6 +489,7 @@
 
     <div class="match-info">
         <label>場次: <input type="number" id="matchNumber" value="1" min="1"></label>
+        <button class="btn btn-red" onclick="hardReset()">🔴 重置所有</button>
         <button class="btn btn-green" onclick="newMatch()">🔄 新比賽</button>
         <button class="btn btn-gold" onclick="declareWinner()">🏆 宣佈勝者</button>
         <button class="btn btn-blue" onclick="exportScore()">📤 匯出</button>
@@ -868,6 +869,58 @@
             
             showWinner(message);
             saveToHistory();
+        }
+
+        // 重置所有
+        function hardReset() {
+            if (!confirm('確定要重置所有嘢嗎？呢個會清除所有分數、犯規、同歷史記錄！')) return;
+            
+            // Reset state
+            state = {
+                redScore: 0,
+                blueScore: 0,
+                redKFS: Array(9).fill(0),
+                blueKFS: Array(9).fill(0),
+                redKFSCollection: 0,
+                blueKFSCollection: 0,
+                redWeapon: 0,
+                blueWeapon: 0,
+                redPenalties: 0,
+                bluePenalties: 0,
+                matchNumber: 1,
+                matchHistory: [],
+                timeRemaining: 180,
+                isPaused: true
+            };
+            
+            // Reset UI
+            document.getElementById('redScore').textContent = '0';
+            document.getElementById('blueScore').textContent = '0';
+            document.getElementById('redKFSCollection').textContent = '0';
+            document.getElementById('blueKFSCollection').textContent = '0';
+            document.getElementById('redWeapon').textContent = '0';
+            document.getElementById('blueWeapon').textContent = '0';
+            document.getElementById('redPenalties').textContent = '0';
+            document.getElementById('bluePenalties').textContent = '0';
+            document.getElementById('matchNumber').value = '1';
+            document.getElementById('redName').value = '紅隊';
+            document.getElementById('blueName').value = '藍隊';
+            
+            // Clear winner display
+            document.getElementById('teamRed').classList.remove('winner');
+            document.getElementById('teamBlue').classList.remove('winner');
+            document.getElementById('winnerBanner').classList.remove('show');
+            
+            renderKFS('red');
+            renderKFS('blue');
+            resetTimer();
+            updateHistoryDisplay();
+            saveState();
+            
+            // Clear localStorage
+            localStorage.removeItem('robocon2026');
+            
+            alert('已重置所有嘢！');
         }
 
         // 新比賽
