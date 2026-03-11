@@ -462,7 +462,14 @@
                 </div>
             </div>
 
-            <button class="btn btn-red penalty-btn" onclick="addPenalty('red')">⚠ 犯規 (-5)</button>
+            <div class="collection-tracker">
+                <div class="collection-item">
+                    <span>⚠️ 犯規:</span>
+                    <button class="btn btn-red" onclick="adjustPenalty('red', -1)">-</button>
+                    <span class="collection-count" id="redPenalties">0</span>
+                    <button class="btn btn-red" onclick="adjustPenalty('red', 1)">+</button>
+                </div>
+            </div>
         </div>
 
         <!-- 藍隊 -->
@@ -510,7 +517,14 @@
                 </div>
             </div>
 
-            <button class="btn btn-blue penalty-btn" onclick="addPenalty('blue')">⚠ 犯規 (-5)</button>
+            <div class="collection-tracker">
+                <div class="collection-item">
+                    <span>⚠️ 犯規:</span>
+                    <button class="btn btn-blue" onclick="adjustPenalty('blue', -1)">-</button>
+                    <span class="collection-count" id="bluePenalties">0</span>
+                    <button class="btn btn-blue" onclick="adjustPenalty('blue', 1)">+</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -643,10 +657,17 @@
             
             // KFS Collection: 10 pts each
             // Weapon Assembly: 10 pts each
-            // Penalties: -5 each
-            const total = baseScore + (coll * 10) + (wep * 10) + pen;
+            // Penalties: recorded separately (not automatically deducted)
+            const total = baseScore + (coll * 10) + (wep * 10);
             
             document.getElementById(team + 'Score').textContent = total;
+            
+            // Update penalty display
+            const penaltyEl = document.getElementById(team + 'Penalties');
+            penaltyEl.textContent = pen;
+            penaltyEl.style.color = pen > 0 ? '#ff6b6b' : 'inherit';
+            penaltyEl.style.fontWeight = pen > 0 ? 'bold' : 'normal';
+            
             saveState();
         }
 
@@ -681,13 +702,14 @@
             updateScore(team);
         }
 
-        function addPenalty(team) {
+        function adjustPenalty(team, delta) {
             if (team === 'red') {
-                state.redPenalties -= 5;
+                state.redPenalties = Math.max(0, state.redPenalties + delta);
+                document.getElementById('redPenalties').textContent = state.redPenalties;
             } else {
-                state.bluePenalties -= 5;
+                state.bluePenalties = Math.max(0, state.bluePenalties + delta);
+                document.getElementById('bluePenalties').textContent = state.bluePenalties;
             }
-            alert((team === 'red' ? '紅隊' : '藍隊') + '犯規！扣5分');
             updateScore(team);
         }
 
@@ -776,6 +798,8 @@
                 blue: blueName,
                 redScore: redTotal,
                 blueScore: blueTotal,
+                redPenalties: state.redPenalties || 0,
+                bluePenalties: state.bluePenalties || 0,
                 winner: redTotal > blueTotal ? 'red' : (blueTotal > redTotal ? 'blue' : 'draw'),
                 time: new Date().toLocaleString('zh-HK')
             });
@@ -793,7 +817,7 @@
             el.innerHTML = state.matchHistory.slice().reverse().map(m => `
                 <div class="history-item">
                     <span>#${m.match} ${m.red} vs ${m.blue}</span>
-                    <span>${m.redScore} - ${m.blueScore} ${m.winner === 'red' ? '🔴' : (m.winner === 'blue' ? '🔵' : '🤝')}</span>
+                    <span>${m.redScore} - ${m.blueScore} ${m.winner === 'red' ? '🔴' : (m.winner === 'blue' ? '🔵' : '🤝')} ${m.redPenalties > 0 ? '(⚠️'+m.redPenalties+')' : ''} ${m.bluePenalties > 0 ? '(⚠️'+m.bluePenalties+')' : ''}</span>
                 </div>
             `).join('');
         }
@@ -809,10 +833,12 @@
             text += `時間: ${String(Math.floor(state.timeRemaining/60)).padStart(2,'0')}:${String(state.timeRemaining%60).padStart(2,'0')}\n\n`;
             text += `${redName}: ${document.getElementById('redScore').textContent} 分\n`;
             text += `  - KFS Collection: ${state.redKFSCollection}\n`;
-            text += `  - Weapon: ${state.redWeapon}\n\n`;
+            text += `  - Weapon: ${state.redWeapon}\n`;
+            text += `  - 犯規: ${state.redPenalties || 0}\n\n`;
             text += `${blueName}: ${document.getElementById('blueScore').textContent} 分\n`;
             text += `  - KFS Collection: ${state.blueKFSCollection}\n`;
             text += `  - Weapon: ${state.blueWeapon}\n`;
+            text += `  - 犯規: ${state.bluePenalties || 0}\n`;
             
             navigator.clipboard.writeText(text).then(() => {
                 alert('比分已複製到剪貼簿！');
@@ -830,13 +856,15 @@
                 state = JSON.parse(saved);
                 
                 document.getElementById('redScore').textContent = 
-                    state.redScore + (state.redKFSCollection*10) + (state.redWeapon*10) + state.redPenalties;
+                    state.redScore + (state.redKFSCollection*10) + (state.redWeapon*10);
                 document.getElementById('blueScore').textContent = 
-                    state.blueScore + (state.blueKFSCollection*10) + (state.blueWeapon*10) + state.bluePenalties;
+                    state.blueScore + (state.blueKFSCollection*10) + (state.blueWeapon*10);
                 document.getElementById('redKFSCollection').textContent = state.redKFSCollection;
                 document.getElementById('blueKFSCollection').textContent = state.blueKFSCollection;
                 document.getElementById('redWeapon').textContent = state.redWeapon;
                 document.getElementById('blueWeapon').textContent = state.blueWeapon;
+                document.getElementById('redPenalties').textContent = state.redPenalties || 0;
+                document.getElementById('bluePenalties').textContent = state.bluePenalties || 0;
                 document.getElementById('matchNumber').value = state.matchNumber;
                 document.getElementById('redName').value = state.redName || '紅隊';
                 document.getElementById('blueName').value = state.blueName || '藍隊';
