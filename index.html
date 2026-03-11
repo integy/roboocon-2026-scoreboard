@@ -457,55 +457,72 @@
             font-size: 0.9rem;
         }
         
-        /* Timeline Chart */
-        .timeline-chart {
-            padding: 10px;
+        /* Line Chart */
+        .line-chart {
+            padding: 20px;
             background: rgba(0,0,0,0.2);
             border-radius: 10px;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        
-        .timeline-item {
-            display: flex;
-            align-items: center;
-            padding: 8px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            font-size: 0.85rem;
-        }
-        
-        .timeline-item:last-child {
-            border-bottom: none;
-        }
-        
-        .timeline-time {
-            font-family: 'Courier New', monospace;
-            color: var(--accent);
-            min-width: 50px;
-        }
-        
-        .timeline-bar-container {
-            flex: 1;
-            height: 8px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 4px;
-            margin: 0 10px;
+            height: 250px;
             position: relative;
         }
         
-        .timeline-bar {
+        .line-chart svg {
+            width: 100%;
             height: 100%;
-            border-radius: 4px;
-            transition: width 0.3s;
         }
         
-        .timeline-bar.red { background: var(--red-team); }
-        .timeline-bar.blue { background: var(--blue-team); }
+        .line-chart .grid-line {
+            stroke: rgba(255,255,255,0.1);
+            stroke-width: 1;
+        }
         
-        .timeline-score {
-            font-weight: bold;
-            min-width: 40px;
-            text-align: right;
+        .line-chart .axis-label {
+            fill: #888;
+            font-size: 10px;
+        }
+        
+        .line-chart .line-red {
+            fill: none;
+            stroke: var(--red-team);
+            stroke-width: 3;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        
+        .line-chart .line-blue {
+            fill: none;
+            stroke: var(--blue-team);
+            stroke-width: 3;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        
+        .line-chart .dot-red {
+            fill: var(--red-team);
+        }
+        
+        .line-chart .dot-blue {
+            fill: var(--blue-team);
+        }
+        
+        .line-chart .legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 10px;
+        }
+        
+        .line-chart .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.8rem;
+        }
+        
+        .line-chart .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
         }
         
         /* Stats Grid */
@@ -1246,34 +1263,103 @@
                 </div>
             `;
             
-            // Timeline Chart
-            if (timeline.length > 0) {
-                html += `
-                    <div class="chart-container">
-                        <div class="chart-title">📅 得分時間線</div>
-                        <div class="timeline-chart">
-                `;
+            // Line Chart
+            if (timeline.length > 1) {
+                // Build SVG line chart
+                const width = 700;
+                const height = 200;
+                const padding = 40;
+                const chartWidth = width - padding * 2;
+                const chartHeight = height - padding * 2;
                 
-                timeline.forEach(entry => {
-                    const max = Math.max(entry.redScore, entry.blueScore, 1);
-                    const redWidth = (entry.redScore / max) * 100;
-                    const blueWidth = (entry.blueScore / max) * 100;
-                    const teamColor = entry.team === 'red' ? 'var(--red-team)' : 'var(--blue-team)';
-                    const teamName = entry.team === 'red' ? '火之龍' : '征龍';
+                // Calculate scales
+                const maxScore = Math.max(redTotal, blueTotal, 10);
+                const xStep = chartWidth / (timeline.length - 1);
+                
+                // Generate points
+                let redPoints = '';
+                let bluePoints = '';
+                let redDots = '';
+                let blueDots = '';
+                
+                timeline.forEach((entry, i) => {
+                    const x = padding + i * xStep;
+                    const redY = padding + chartHeight - (entry.redScore / maxScore) * chartHeight;
+                    const blueY = padding + chartHeight - (entry.blueScore / maxScore) * chartHeight;
                     
-                    html += `
-                        <div class="timeline-item">
-                            <span class="timeline-time">${entry.time}</span>
-                            <span style="color:${teamColor}; min-width:40px;">${teamName}</span>
-                            <div class="timeline-bar-container">
-                                <div class="timeline-bar ${entry.team}" style="width:${entry.team === 'red' ? redWidth : blueWidth}%"></div>
-                            </div>
-                            <span class="timeline-score" style="color:${teamColor}">${entry.points > 0 ? '+' : ''}${entry.points}</span>
-                        </div>
-                    `;
+                    redPoints += (i === 0 ? 'M' : 'L') + x + ',' + redY + ' ';
+                    bluePoints += (i === 0 ? 'M' : 'L') + x + ',' + blueY + ' ';
+                    
+                    // Add dots
+                    if (i % Math.ceil(timeline.length / 10) === 0 || i === timeline.length - 1) {
+                        redDots += `<circle cx="${x}" cy="${redY}" r="4" class="dot-red"/>`;
+                        blueDots += `<circle cx="${x}" cy="${blueY}" r="4" class="dot-blue"/>`;
+                    }
+                });
+                
+                // Generate Y-axis labels
+                let yLabels = '';
+                for (let i = 0; i <= 5; i++) {
+                    const y = padding + (chartHeight / 5) * i;
+                    const label = Math.round(maxScore * (5 - i) / 5);
+                    yLabels += `<text x="${padding - 5}" y="${y + 4}" class="axis-label" text-anchor="end">${label}</text>`;
+                }
+                
+                // Generate X-axis labels (time)
+                let xLabels = '';
+                const labelStep = Math.ceil(timeline.length / 6);
+                timeline.forEach((entry, i) => {
+                    if (i % labelStep === 0 || i === timeline.length - 1) {
+                        const x = padding + i * xStep;
+                        xLabels += `<text x="${x}" y="${height - 10}" class="axis-label" text-anchor="middle">${entry.time}</text>`;
+                    }
                 });
                 
                 html += `
+                    <div class="chart-container">
+                        <div class="chart-title">📅 得分時間線</div>
+                        <div class="line-chart">
+                            <svg viewBox="0 0 ${width} ${height}">
+                                <!-- Grid lines -->
+                                ${[0,1,2,3,4,5].map(i => `<line x1="${padding}" y1="${padding + (chartHeight/5)*i}" x2="${width-padding}" y2="${padding + (chartHeight/5)*i}" class="grid-line"/>`).join('')}
+                                
+                                <!-- Axes -->
+                                <line x1="${padding}" y1="${padding}" x2="${padding}" y2="${height-padding}" class="grid-line" stroke-width="2"/>
+                                <line x1="${padding}" y1="${height-padding}" x2="${width-padding}" y2="${height-padding}" class="grid-line" stroke-width="2"/>
+                                
+                                <!-- Y-axis labels -->
+                                ${yLabels}
+                                
+                                <!-- X-axis labels -->
+                                ${xLabels}
+                                
+                                <!-- Lines -->
+                                <path d="${redPoints}" class="line-red"/>
+                                <path d="${bluePoints}" class="line-blue"/>
+                                
+                                <!-- Dots -->
+                                ${redDots}
+                                ${blueDots}
+                            </svg>
+                            <div class="legend">
+                                <div class="legend-item">
+                                    <div class="legend-dot" style="background:var(--red-team)"></div>
+                                    <span>火之龍</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-dot" style="background:var(--blue-team)"></div>
+                                    <span>征龍</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (timeline.length === 1) {
+                html += `
+                    <div class="chart-container">
+                        <div class="chart-title">📅 得分時間線</div>
+                        <div style="text-align:center; padding:20px; color:#888;">
+                            需要多於1個數據點先可以顯示折線圖
                         </div>
                     </div>
                 `;
