@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robocon 2026 計分板</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --red-team: #e63946;
+            --red-dark: #b82d38;
+            --blue-team: #457b9d;
+            --blue-dark: #2d5a73;
+            --bg-dark: #1a1a2e;
+            --bg-card: #16213e;
+            --accent: #f4a261;
+            --text-light: #f1faee;
+            --green: #2a9d8f;
+        }
+
+        body {
+            background: var(--bg-dark);
+            color: var(--text-light);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            color: var(--accent);
+            text-shadow: 0 0 20px rgba(244, 162, 97, 0.5);
+            margin-bottom: 10px;
+        }
+
+        .header .subtitle {
+            font-size: 1rem;
+            opacity: 0.7;
+        }
+
+        .match-info {
+            background: var(--bg-card);
+            padding: 15px 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .match-info input {
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid var(--accent);
+            color: var(--text-light);
+            font-size: 1rem;
+            padding: 5px 10px;
+            text-align: center;
+        }
+
+        .match-info input:focus {
+            outline: none;
+            border-color: var(--green);
+        }
+
+        .scoreboard {
+            display: flex;
+            gap: 40px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .team-card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 30px;
+            min-width: 300px;
+            text-align: center;
+            position: relative;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .team-card.red {
+            border: 3px solid var(--red-team);
+        }
+
+        .team-card.blue {
+            border: 3px solid var(--blue-team);
+        }
+
+        .team-card.winner {
+            box-shadow: 0 0 30px rgba(42, 157, 143, 0.8);
+        }
+
+        .team-name {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .red .team-name { color: var(--red-team); }
+        .blue .team-name { color: var(--blue-team); }
+
+        .score {
+            font-size: 6rem;
+            font-weight: bold;
+            margin: 20px 0;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+        }
+
+        .round-scores {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+
+        .round-score {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 5px 12px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+
+        .round-score.winner {
+            background: var(--green);
+            color: white;
+        }
+
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 15px 20px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: bold;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-red {
+            background: var(--red-team);
+            color: white;
+        }
+
+        .btn-red:hover { background: var(--red-dark); }
+
+        .btn-blue {
+            background: var(--blue-team);
+            color: white;
+        }
+
+        .btn-blue:hover { background: var(--blue-dark); }
+
+        .btn-green {
+            background: var(--green);
+            color: white;
+        }
+
+        .btn-green:hover {
+            background: #1e7a6d;
+        }
+
+        .btn-orange {
+            background: var(--accent);
+            color: var(--bg-dark);
+        }
+
+        .btn-orange:hover {
+            background: #d68c4d;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .full-width {
+            grid-column: span 2;
+        }
+
+        .match-history {
+            background: var(--bg-card);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 30px;
+            width: 100%;
+            max-width: 700px;
+        }
+
+        .match-history h3 {
+            color: var(--accent);
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        .winner-badge {
+            background: var(--green);
+            padding: 2px 8px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+        }
+
+        .timer-section {
+            background: var(--bg-card);
+            padding: 20px 40px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .timer {
+            font-size: 3rem;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            color: var(--accent);
+        }
+
+        .timer.warning {
+            color: #f4a261;
+        }
+
+        .timer.danger {
+            color: var(--red-team);
+        }
+
+        .penalty-section {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+            justify-content: center;
+        }
+
+        @media (max-width: 768px) {
+            .scoreboard {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .team-card {
+                min-width: 100%;
+            }
+
+            .score {
+                font-size: 4rem;
+            }
+
+            .header h1 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🤖 Robocon 2026 計分板</h1>
+        <div class="subtitle">雙手柄遙控機器人比賽計分系統</div>
+    </div>
+
+    <div class="match-info">
+        <label>場次: <input type="text" id="matchNumber" value="1" style="width: 50px;"></label>
+        <label>回合: <input type="text" id="roundNumber" value="1" style="width: 30px;"></label>
+        <button class="btn btn-green" onclick="nextRound()">下一回合</button>
+    </div>
+
+    <div class="timer-section">
+        <div class="timer" id="timer">01:30</div>
+        <div class="controls">
+            <button class="btn btn-green" onclick="startTimer()">▶ 開始</button>
+            <button class="btn btn-orange" onclick="pauseTimer()">⏸ 暫停</button>
+            <button class="btn btn-blue" onclick="resetTimer()">↺ 重置</button>
+        </div>
+    </div>
+
+    <div class="scoreboard">
+        <div class="team-card red" id="teamRed">
+            <div class="team-name">紅隊</div>
+            <input type="text" id="redName" value="紅隊" style="font-size:1.2rem; margin-bottom:10px; width:80%;">
+            <div class="score" id="redScore">0</div>
+            <div class="round-scores" id="redRounds"></div>
+            <div class="buttons">
+                <button class="btn btn-red" onclick="addScore('red', 1)">+1 分</button>
+                <button class="btn btn-red" onclick="addScore('red', 5)">+5 分</button>
+                <button class="btn btn-red" onclick="addScore('red', 10)">+10 分</button>
+                <button class="btn btn-red" onclick="addScore('red', -1)">-1 分</button>
+            </div>
+            <div class="penalty-section">
+                <button class="btn btn-red" style="background:#8b0000;" onclick="addPenalty('red')">⚠ 犯規</button>
+            </div>
+        </div>
+
+        <div class="team-card blue" id="teamBlue">
+            <div class="team-name">藍隊</div>
+            <input type="text" id="blueName" value="藍隊" style="font-size:1.2rem; margin-bottom:10px; width:80%;">
+            <div class="score" id="blueScore">0</div>
+            <div class="round-scores" id="blueRounds"></div>
+            <div class="buttons">
+                <button class="btn btn-blue" onclick="addScore('blue', 1)">+1 分</button>
+                <button class="btn btn-blue" onclick="addScore('blue', 5)">+5 分</button>
+                <button class="btn btn-blue" onclick="addScore('blue', 10)">+10 分</button>
+                <button class="btn btn-blue" onclick="addScore('blue', -1)">-1 分</button>
+            </div>
+            <div class="penalty-section">
+                <button class="btn btn-blue" style="background:#00008b;" onclick="addPenalty('blue')">⚠ 犯規</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="btn btn-green" onclick="newMatch()">🔄 新比賽</button>
+        <button class="btn btn-orange" onclick="declareWinner()">🏆 宣佈勝者</button>
+        <button class="btn btn-blue" onclick="exportScore()">📤 匯出比分</button>
+    </div>
+
+    <div class="match-history">
+        <h3>📊 比赛历史</h3>
+        <div id="historyList">
+            <div style="text-align:center; opacity:0.5;">暫時沒有比賽記錄</div>
+        </div>
+    </div>
+
+    <script>
+        // 狀態
+        let redScore = 0;
+        let blueScore = 0;
+        let redRoundScores = [];
+        let blueRoundScores = [];
+        let matchHistory = [];
+        let timerInterval = null;
+        let timeRemaining = 90; // 秒
+        let isPaused = true;
+
+        // 計時器
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeRemaining / 60);
+            const seconds = timeRemaining % 60;
+            const display = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            const timerEl = document.getElementById('timer');
+            timerEl.textContent = display;
+            
+            timerEl.classList.remove('warning', 'danger');
+            if (timeRemaining <= 10) {
+                timerEl.classList.add('danger');
+            } else if (timeRemaining <= 30) {
+                timerEl.classList.add('warning');
+            }
+        }
+
+        function startTimer() {
+            if (!isPaused) return;
+            isPaused = false;
+            timerInterval = setInterval(() => {
+                if (timeRemaining > 0) {
+                    timeRemaining--;
+                    updateTimerDisplay();
+                } else {
+                    pauseTimer();
+                    // 比賽結束音效或提示
+                }
+            }, 1000);
+        }
+
+        function pauseTimer() {
+            isPaused = true;
+            clearInterval(timerInterval);
+        }
+
+        function resetTimer() {
+            pauseTimer();
+            timeRemaining = 90;
+            updateTimerDisplay();
+        }
+
+        // 分數管理
+        function addScore(team, points) {
+            if (team === 'red') {
+                redScore = Math.max(0, redScore + points);
+                document.getElementById('redScore').textContent = redScore;
+            } else {
+                blueScore = Math.max(0, blueScore + points);
+                document.getElementById('blueScore').textContent = blueScore;
+            }
+            saveToLocalStorage();
+        }
+
+        function addPenalty(team) {
+            if (team === 'red') {
+                redScore = Math.max(0, redScore - 5);
+                document.getElementById('redScore').textContent = redScore;
+                alert('紅隊犯規！扣5分');
+            } else {
+                blueScore = Math.max(0, blueScore - 5);
+                document.getElementById('blueScore').textContent = blueScore;
+                alert('藍隊犯規！扣5分');
+            }
+            saveToLocalStorage();
+        }
+
+        // 回合
+        function nextRound() {
+            // 記錄這回合分數
+            redRoundScores.push(redScore);
+            blueRoundScores.push(blueScore);
+            
+            updateRoundDisplay();
+            
+            // 重置計時器
+            resetTimer();
+            
+            // 更新回合數
+            const roundInput = document.getElementById('roundNumber');
+            roundInput.value = parseInt(roundInput.value) + 1;
+            
+            saveToLocalStorage();
+        }
+
+        function updateRoundDisplay() {
+            const redRoundsEl = document.getElementById('redRounds');
+            const blueRoundsEl = document.getElementById('blueRounds');
+            
+            redRoundsEl.innerHTML = redRoundScores.map((s, i) => 
+                `<span class="round-score ${s > blueRoundScores[i] ? 'winner' : ''}">R${i+1}:${s}</span>`
+            ).join('');
+            
+            blueRoundsEl.innerHTML = blueRoundScores.map((s, i) => 
+                `<span class="round-score ${s > redRoundScores[i] ? 'winner' : ''}">R${i+1}:${s}</span>`
+            ).join('');
+        }
+
+        // 新比賽
+        function newMatch() {
+            if (!confirm('確定要開始新比賽嗎？当前比分將會保存到歷史記錄。')) return;
+            
+            // 保存到歷史
+            const match = {
+                matchNumber: document.getElementById('matchNumber').value,
+                redName: document.getElementById('redName').value,
+                blueName: document.getElementById('blueName').value,
+                redScore: redScore,
+                blueScore: blueScore,
+                redRounds: [...redRoundScores],
+                blueRounds: [...blueRoundScores],
+                winner: redScore > blueScore ? 'red' : (blueScore > redScore ? 'blue' : 'draw'),
+                timestamp: new Date().toLocaleString('zh-HK')
+            };
+            
+            if (redScore > 0 || blueScore > 0) {
+                matchHistory.push(match);
+                updateHistoryDisplay();
+            }
+            
+            // 重置
+            redScore = 0;
+            blueScore = 0;
+            redRoundScores = [];
+            blueRoundScores = [];
+            
+            document.getElementById('redScore').textContent = '0';
+            document.getElementById('blueScore').textContent = '0';
+            document.getElementById('redRounds').innerHTML = '';
+            document.getElementById('blueRounds').innerHTML = '';
+            document.getElementById('matchNumber').value = parseInt(document.getElementById('matchNumber').value) + 1;
+            document.getElementById('roundNumber').value = '1';
+            
+            resetTimer();
+            saveToLocalStorage();
+        }
+
+        // 宣佈勝者
+        function declareWinner() {
+            const redName = document.getElementById('redName').value;
+            const blueName = document.getElementById('blueName').value;
+            
+            let message;
+            if (redScore > blueScore) {
+                message = `🏆 勝利者: ${redName}！`;
+            } else if (blueScore > redScore) {
+                message = `🏆 勝利者: ${blueName}！`;
+            } else {
+                message = '🤝 比賽平手！';
+            }
+            
+            alert(message);
+            
+            // 顯示勝利動畫
+            if (redScore > blueScore) {
+                document.getElementById('teamRed').classList.add('winner');
+                document.getElementById('teamBlue').classList.remove('winner');
+            } else if (blueScore > redScore) {
+                document.getElementById('teamBlue').classList.add('winner');
+                document.getElementById('teamRed').classList.remove('winner');
+            }
+        }
+
+        // 匯出比分
+        function exportScore() {
+            const redName = document.getElementById('redName').value;
+            const blueName = document.getElementById('blueName').value;
+            const matchNum = document.getElementById('matchNumber').value;
+            
+            let text = `🤖 Robocon 2026 比分匯出\n`;
+            text += `====================\n`;
+            text += `場次: ${matchNum}\n`;
+            text += `${redName}: ${redScore} 分\n`;
+            text += `${blueName}: ${blueScore} 分\n`;
+            text += `--------------------\n`;
+redRoundScores.length            
+            if ( > 0) {
+                text += `回合比分:\n`;
+                redRoundScores.forEach((s, i) => {
+                    text += `  R${i+1}: ${redName} ${s} - ${blueName} ${blueRoundScores[i]}\n`;
+                });
+            }
+            
+            // 複製到剪貼簿
+            navigator.clipboard.writeText(text).then(() => {
+                alert('比分已複製到剪貼簿！');
+            }).catch(() => {
+                // fallback
+                console.log(text);
+                alert('比分:\n' + text);
+            });
+        }
+
+        // 歷史記錄
+        function updateHistoryDisplay() {
+            const historyEl = document.getElementById('historyList');
+            
+            if (matchHistory.length === 0) {
+                historyEl.innerHTML = '<div style="text-align:center; opacity:0.5;">暫時沒有比賽記錄</div>';
+                return;
+            }
+            
+            historyEl.innerHTML = matchHistory.slice().reverse().map(m => `
+                <div class="history-item">
+                    <span>${m.matchNumber}. ${m.redName} vs ${m.blueName}</span>
+                    <span>${m.redScore} - ${m.blueScore} ${m.winner === 'red' ? '🔴' : (m.winner === 'blue' ? '🔵' : '🤝')}</span>
+                </div>
+            `).join('');
+        }
+
+        // LocalStorage
+        function saveToLocalStorage() {
+            const data = {
+                redScore, blueScore, redRoundScores, blueRoundScores,
+                matchNumber: document.getElementById('matchNumber').value,
+                roundNumber: document.getElementById('roundNumber').value,
+                redName: document.getElementById('redName').value,
+                blueName: document.getElementById('blueName').value,
+                timeRemaining, matchHistory
+            };
+            localStorage.setItem('robocon2026', JSON.stringify(data));
+        }
+
+        function loadFromLocalStorage() {
+            const saved = localStorage.getItem('robocon2026');
+            if (saved) {
+                const data = JSON.parse(saved);
+                redScore = data.redScore || 0;
+                blueScore = data.blueScore || 0;
+                redRoundScores = data.redRoundScores || [];
+                blueRoundScores = data.blueRoundScores || [];
+                matchHistory = data.matchHistory || [];
+                
+                document.getElementById('redScore').textContent = redScore;
+                document.getElementById('blueScore').textContent = blueScore;
+                document.getElementById('matchNumber').value = data.matchNumber || '1';
+                document.getElementById('roundNumber').value = data.roundNumber || '1';
+                document.getElementById('redName').value = data.redName || '紅隊';
+                document.getElementById('blueName').value = data.blueName || '藍隊';
+                timeRemaining = data.timeRemaining || 90;
+                
+                updateRoundDisplay();
+                updateHistoryDisplay();
+                updateTimerDisplay();
+            }
+        }
+
+        // 初始化
+        loadFromLocalStorage();
+
+        // 自動保存
+        setInterval(saveToLocalStorage, 10000);
+    </script>
+</body>
+</html>
