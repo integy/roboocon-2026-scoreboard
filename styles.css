@@ -1,10 +1,4 @@
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
+/* ==================== Mobile & Touch Friendly ==================== */
 :root {
     --red-team: #e63946;
     --red-dark: #b82d38;
@@ -24,6 +18,10 @@
     --status-ended: #95a5a6;
 }
 
+html {
+    font-size: 16px;
+}
+
 body {
     background: var(--bg-dark);
     color: var(--text-light);
@@ -31,23 +29,452 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 15px;
+    padding: 10px;
+    overflow-x: hidden;
 }
 
+/* Touch-friendly buttons - larger tap targets */
+.btn {
+    padding: 12px 20px;
+    font-size: 1rem;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: bold;
+    min-height: 44px;
+    min-width: 44px;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+.btn:hover { transform: translateY(-2px); }
+.btn:active { transform: scale(0.95); }
+
+.btn-green { background: var(--green); color: white; }
+.btn-green:hover { background: #1e7a6d; }
+.btn-orange { background: var(--accent); color: var(--bg-dark); }
+.btn-orange:hover { background: #d68c4d; }
+.btn-red { background: var(--red-team); color: white; }
+.btn-red:hover { background: var(--red-dark); }
+.btn-blue { background: var(--blue-team); color: white; }
+.btn-blue:hover { background: var(--blue-dark); }
+.btn-gold { background: var(--gold); color: var(--bg-dark); }
+
+/* Larger scoring buttons */
+.scoring-btns .btn {
+    padding: 12px 14px;
+    font-size: 0.85rem;
+    min-height: 48px;
+}
+
+/* Collection tracker buttons */
+.collection-item .btn {
+    padding: 10px 14px;
+    font-size: 1rem;
+    min-height: 44px;
+    min-width: 44px;
+}
+
+/* KFS cells - larger touch targets */
+.kfs-cell {
+    aspect-ratio: 1;
+    background: rgba(255,255,255,0.1);
+    border: 2px solid rgba(255,255,255,0.2);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    min-height: 50px;
+    min-width: 50px;
+}
+
+/* Header styling */
 .header {
     text-align: center;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
+    width: 100%;
 }
 
 .header h1 {
-    font-size: 2rem;
+    font-size: 1.5rem;
     color: var(--accent);
     text-shadow: 0 0 20px rgba(244, 162, 97, 0.5);
 }
 
 .header .subtitle {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     opacity: 0.7;
+}
+
+/* Timer cards */
+.timer-card {
+    background: var(--bg-card);
+    border-radius: 15px;
+    padding: 15px;
+    text-align: center;
+    min-width: 250px;
+    flex: 1;
+    max-width: 350px;
+    border: 2px solid rgba(255,255,255,0.1);
+    transition: all 0.3s;
+}
+
+.timer-display {
+    font-size: 2.5rem;
+    font-weight: bold;
+    font-family: 'Courier New', monospace;
+    color: var(--accent);
+    margin: 10px 0;
+}
+
+/* ==================== Landscape Mode Layout ==================== */
+@media (orientation: landscape) {
+    /* Switch to horizontal layout */
+    body {
+        padding: 10px 15px;
+    }
+
+    .header {
+        margin-bottom: 10px;
+    }
+
+    .header h1 {
+        font-size: 1.3rem;
+    }
+
+    /* Timer cards side by side */
+    .dual-timers {
+        display: flex;
+        flex-direction: row;
+        gap: 15px;
+        margin-bottom: 10px;
+        max-width: 100%;
+    }
+
+    .timer-card {
+        min-width: 200px;
+        max-width: 300px;
+        padding: 10px;
+    }
+
+    .timer-display {
+        font-size: 2rem;
+    }
+
+    .timer-controls {
+        gap: 5px;
+    }
+
+    .timer-controls .btn {
+        padding: 8px 12px;
+        font-size: 0.8rem;
+    }
+
+    /* Main content: timers and scoreboard side by side */
+    .main-content {
+        display: flex;
+        flex-direction: row;
+        gap: 15px;
+        width: 100%;
+        max-width: 100%;
+    }
+
+    /* Scoreboard side by side in landscape */
+    .scoreboard {
+        display: flex;
+        flex-direction: row;
+        gap: 15px;
+        width: 100%;
+    }
+
+    .team-card {
+        flex: 1;
+        min-width: 0;
+        padding: 12px;
+    }
+
+    .score {
+        font-size: 2.5rem;
+    }
+
+    /* Reduce KFS grid size */
+    .kfs-grid {
+        max-width: 100px;
+    }
+
+    .kfs-cell {
+        font-size: 1.2rem;
+        min-height: 35px;
+        min-width: 35px;
+    }
+
+    /* Compact sections */
+    .scoring-section {
+        margin: 8px 0;
+        padding: 8px;
+    }
+
+    .scoring-section h4 {
+        font-size: 0.75rem;
+        margin-bottom: 5px;
+    }
+
+    .collection-tracker {
+        margin-top: 5px;
+        gap: 8px;
+    }
+
+    /* Compact rules panel */
+    .rules-panel {
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+
+    .rules-panel h3 {
+        font-size: 0.9rem;
+    }
+
+    .rules-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 5px;
+    }
+
+    .rule-item {
+        padding: 5px 8px;
+        font-size: 0.7rem;
+    }
+
+    /* Match info compact */
+    .match-info {
+        padding: 8px 12px;
+        gap: 8px;
+    }
+
+    .match-info .btn {
+        padding: 8px 12px;
+        font-size: 0.8rem;
+    }
+
+    /* Keyboard hints - hide in landscape to save space */
+    .keyboard-hints {
+        display: none;
+    }
+
+    /* History and scoring log panels - collapsible in landscape */
+    .history-panel,
+    .scoring-log-panel {
+        padding: 10px;
+        margin-top: 10px;
+    }
+
+    /* Smaller text for inputs */
+    .team-card input {
+        font-size: 0.9rem !important;
+        padding: 5px !important;
+    }
+
+    /* Smaller collection tracker text */
+    .collection-item {
+        font-size: 0.85rem;
+    }
+
+    .collection-count {
+        font-size: 1rem;
+        min-width: 25px;
+    }
+}
+
+/* ==================== Portrait Mode (Default) ==================== */
+@media (orientation: portrait) {
+    .dual-timers {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        margin-bottom: 15px;
+        width: 100%;
+    }
+
+    .timer-card {
+        min-width: 100%;
+        max-width: 100%;
+        padding: 15px;
+    }
+
+    .timer-display {
+        font-size: 2.8rem;
+    }
+
+    .scoreboard {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        width: 100%;
+    }
+
+    .team-card {
+        min-width: 100%;
+    }
+}
+
+/* ==================== Extra Small Screens ==================== */
+@media (max-width: 400px) {
+    body {
+        padding: 8px;
+    }
+
+    .header h1 {
+        font-size: 1.2rem;
+    }
+
+    .header .subtitle {
+        font-size: 0.75rem;
+    }
+
+    .timer-display {
+        font-size: 2.2rem;
+    }
+
+    .timer-card {
+        padding: 12px;
+    }
+
+    .score {
+        font-size: 2rem;
+    }
+
+    .team-name {
+        font-size: 1rem;
+    }
+
+    .kfs-grid {
+        max-width: 90px;
+    }
+
+    .kfs-cell {
+        font-size: 1rem;
+        min-height: 30px;
+        min-width: 30px;
+    }
+
+    .scoring-btns .btn {
+        padding: 10px 10px;
+        font-size: 0.75rem;
+    }
+
+    .collection-item {
+        font-size: 0.8rem;
+    }
+
+    .collection-item .btn {
+        padding: 8px 10px;
+        font-size: 0.9rem;
+    }
+}
+
+/* ==================== Tablet and Larger ==================== */
+@media (min-width: 768px) and (orientation: portrait) {
+    .dual-timers {
+        flex-direction: row;
+        max-width: 700px;
+    }
+
+    .timer-card {
+        min-width: 280px;
+        max-width: 340px;
+    }
+
+    .timer-display {
+        font-size: 3rem;
+    }
+
+    .scoreboard {
+        flex-direction: row;
+        max-width: 700px;
+    }
+
+    .team-card {
+        min-width: 300px;
+    }
+
+    .score {
+        font-size: 3.5rem;
+    }
+
+    .kfs-grid {
+        max-width: 130px;
+    }
+
+    .kfs-cell {
+        font-size: 1.5rem;
+        min-height: 45px;
+    }
+}
+
+/* ==================== Wide Landscape ( Tablets in landscape ) ==================== */
+@media (min-width: 900px) and (orientation: landscape) {
+    body {
+        padding: 15px 25px;
+    }
+
+    .header h1 {
+        font-size: 1.8rem;
+    }
+
+    .dual-timers {
+        gap: 20px;
+        margin-bottom: 15px;
+    }
+
+    .timer-card {
+        max-width: 400px;
+        padding: 20px;
+    }
+
+    .timer-display {
+        font-size: 3rem;
+    }
+
+    .timer-controls .btn {
+        padding: 10px 16px;
+        font-size: 0.9rem;
+    }
+
+    .scoreboard {
+        gap: 20px;
+    }
+
+    .team-card {
+        padding: 20px;
+    }
+
+    .score {
+        font-size: 3.5rem;
+    }
+
+    .kfs-grid {
+        max-width: 140px;
+    }
+
+    .kfs-cell {
+        font-size: 1.5rem;
+        min-height: 45px;
+    }
+
+    .scoring-btns .btn {
+        padding: 12px 16px;
+        font-size: 0.9rem;
+    }
+}
+
+/* ==================== Prevent text selection on interactive elements ==================== */
+.scoreboard, .team-card, .kfs-grid, .btn {
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 /* Timer Settings */
@@ -442,28 +869,7 @@ body {
     border-radius: 4px;
 }
 
-.btn {
-    padding: 10px 18px;
-    font-size: 0.9rem;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-weight: bold;
-}
-
-.btn:hover { transform: translateY(-2px); }
-.btn:active { transform: translateY(0); }
-
-.btn-green { background: var(--green); color: white; }
-.btn-green:hover { background: #1e7a6d; }
-.btn-orange { background: var(--accent); color: var(--bg-dark); }
-.btn-orange:hover { background: #d68c4d; }
-.btn-red { background: var(--red-team); color: white; }
-.btn-red:hover { background: var(--red-dark); }
-.btn-blue { background: var(--blue-team); color: white; }
-.btn-blue:hover { background: var(--blue-dark); }
-.btn-gold { background: var(--gold); color: var(--bg-dark); }
+.btn { /* Already defined in mobile section above */ }
 
 .scoreboard {
     display: flex;

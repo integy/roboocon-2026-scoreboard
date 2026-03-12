@@ -868,6 +868,37 @@ document.addEventListener('keydown', handleKeyboard);
 loadState();
 setInterval(saveState, 5000);
 
+// ==================== Orientation Detection ====================
+function handleOrientationChange() {
+    const isLandscape = window.matchMedia('(orientation: landscape)').matches;
+    const isPortrait = window.matchMedia('(orientation: portrait)').matches;
+    
+    // Add body class for CSS targeting
+    document.body.classList.remove('landscape', 'portrait');
+    if (isLandscape) {
+        document.body.classList.add('landscape');
+        console.log('📱 切換到橫屏模式');
+    } else if (isPortrait) {
+        document.body.classList.add('portrait');
+        console.log('📱 切換到豎屏模式');
+    }
+    
+    // Trigger a resize event to recalculate any dynamic layouts
+    window.dispatchEvent(new Event('resize'));
+}
+
+// Listen for orientation changes
+if (window.matchMedia) {
+    const mediaQuery = window.matchMedia('(orientation: landscape)');
+    mediaQuery.addEventListener('change', handleOrientationChange);
+}
+
+// Also listen for resize events (handles some edge cases)
+window.addEventListener('resize', handleOrientationChange);
+
+// Initial orientation detection
+handleOrientationChange();
+
 // Add any missing legacy function stubs for compatibility
 function toggleTotalTimer() {
     // This was a planned feature - show a simple alert for now
