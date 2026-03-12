@@ -976,6 +976,7 @@ body {
 .kfs-cell.red { background: var(--red-team); border-color: var(--red-team); }
 .kfs-cell.blue { background: var(--blue-team); border-color: var(--blue-team); }
 .kfs-cell:hover { transform: scale(1.1); }
+.kfs-cell.disabled { cursor: not-allowed; }
 
 .kfs-cell.kungfu {
     background: var(--gold) !important;

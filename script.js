@@ -30,7 +30,8 @@ const soundManager = new SoundManager();
 // ==================== State ====================
 let state = {
     redScore: 0, blueScore: 0,
-    redKFS: Array(9).fill(0), blueKFS: Array(9).fill(0),
+    redKFS: Array(9).fill(0), blueKFS: Array(9).fill(0), kfsGrid: Array(9).fill(0),
+    kfsGrid: Array(9).fill(0), // 0=empty, 1=red, 2=blue - shared grid
     redKFSCollection: 0, blueKFSCollection: 0,
     redWeapon: 0, blueWeapon: 0,
     redPenalties: 0, bluePenalties: 0,
@@ -313,14 +314,31 @@ function updateTimerSettings() {
 
 // ==================== KFS Functions ====================
 function toggleKFS(team, index) {
+    // Check if this position is already taken by the other team
+    const otherTeam = team === 'red' ? 'blue' : 'red';
+    const otherKFS = otherTeam === 'red' ? state.redKFS : state.blueKFS;
+    
+    // If the other team already placed a KFS here, cannot place
+    if (otherKFS[index] === 1) {
+        alert('對手已經佔據呢個位置！');
+        return;
+    }
+    
     saveUndoState();
     const kfs = team === 'red' ? state.redKFS : state.blueKFS;
     const wasPlaced = kfs[index];
     kfs[index] = kfs[index] ? 0 : 1;
     const isPlaced = kfs[index];
+    
+    // Update shared grid: 0=empty, 1=red, 2=blue
+    state.kfsGrid[index] = isPlaced ? (team === 'red' ? 1 : 2) : 0;
+    
     renderKFS(team);
+    renderKFS(otherTeam); // Update other team's grid too
     calculateKFSScore(team);
+    calculateKFSScore(otherTeam);
     checkKungFuMaster(team);
+    checkKungFuMaster(otherTeam);
     if (isPlaced && !wasPlaced) { const rowName = index < 3 ? '上排' : (index < 6 ? '中排' : '下排'); logScore(team, 'KFS', KFS_POINTS[index], `擺放 KFS #${index+1} (${rowName})`); }
     else if (!isPlaced && wasPlaced) logScore(team, 'KFS', -KFS_POINTS[index], `移除 KFS #${index+1}`);
     soundManager.playScore();
@@ -346,8 +364,24 @@ function renderKFS(team) {
     const cells = grid.children;
     for (let i = 0; i < 9; i++) {
         cells[i].className = 'kfs-cell';
-        if (kfs[i] === 1) { cells[i].classList.add(team); cells[i].textContent = '🎯'; }
-        else cells[i].textContent = '';
+        const sharedValue = state.kfsGrid[i];
+        
+        // Check if this cell is taken by opponent
+        const isTakenByOpponent = (team === 'red' && sharedValue === 2) || (team === 'blue' && sharedValue === 1);
+        
+        if (kfs[i] === 1) { 
+            cells[i].classList.add(team); 
+            cells[i].textContent = '🎯'; 
+        } else if (isTakenByOpponent) {
+            // Show opponent's marker but disable clicking
+            cells[i].classList.add(team === 'red' ? 'blue' : 'red', 'disabled');
+            cells[i].textContent = '❌';
+            cells[i].style.opacity = '0.5';
+        }
+        else {
+            cells[i].textContent = '';
+            cells[i].style.opacity = '1';
+        }
     }
 }
 
@@ -638,7 +672,7 @@ function hardReset() {
         pauseMatchTimer();
         
         state = {
-            redScore: 0, blueScore: 0, redKFS: Array(9).fill(0), blueKFS: Array(9).fill(0),
+            redScore: 0, blueScore: 0, redKFS: Array(9).fill(0), blueKFS: Array(9).fill(0), kfsGrid: Array(9).fill(0),
             redKFSCollection: 0, blueKFSCollection: 0, redWeapon: 0, blueWeapon: 0,
             redPenalties: 0, bluePenalties: 0, matchNumber: 1, matchHistory: [], scoringLog: [],
             prepTimeRemaining: state.prepTime, prepTime: state.prepTime,
@@ -691,7 +725,7 @@ function startNewMatch() {
     pauseMatchTimer();
     
     state.redScore = 0; state.blueScore = 0;
-    state.redKFS = Array(9).fill(0); state.blueKFS = Array(9).fill(0);
+    state.redKFS = Array(9).fill(0); state.blueKFS = Array(9).fill(0); state.kfsGrid = Array(9).fill(0);
     state.redKFSCollection = 0; state.blueKFSCollection = 0;
     state.redWeapon = 0; state.blueWeapon = 0;
     state.redPenalties = 0; state.bluePenalties = 0;
