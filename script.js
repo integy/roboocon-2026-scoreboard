@@ -314,12 +314,16 @@ function updateTimerSettings() {
 
 // ==================== KFS Functions ====================
 function toggleKFS(team, index) {
-    // Check if this position is already taken by the other team
+    // Mirror index for blue team (left-right swap in shared grid)
+    const mirrorMap = [2, 1, 0, 5, 4, 3, 8, 7, 6];
+    const sharedIndex = team === 'blue' ? mirrorMap[index] : index;
+    
+    // Check if this position is already taken by the other team (using shared index)
     const otherTeam = team === 'red' ? 'blue' : 'red';
     const otherKFS = otherTeam === 'red' ? state.redKFS : state.blueKFS;
     
     // If the other team already placed a KFS here, cannot place
-    if (otherKFS[index] === 1) {
+    if (otherKFS[sharedIndex] === 1) {
         alert('對手已經佔據呢個位置！');
         return;
     }
@@ -330,8 +334,8 @@ function toggleKFS(team, index) {
     kfs[index] = kfs[index] ? 0 : 1;
     const isPlaced = kfs[index];
     
-    // Update shared grid: 0=empty, 1=red, 2=blue
-    state.kfsGrid[index] = isPlaced ? (team === 'red' ? 1 : 2) : 0;
+    // Update shared grid: 0=empty, 1=red, 2=blue (use sharedIndex for mirror)
+    state.kfsGrid[sharedIndex] = isPlaced ? (team === 'red' ? 1 : 2) : 0;
     
     renderKFS(team);
     renderKFS(otherTeam); // Update other team's grid too
@@ -346,8 +350,15 @@ function toggleKFS(team, index) {
 
 function calculateKFSScore(team) {
     const kfs = team === 'red' ? state.redKFS : state.blueKFS;
+    const mirrorMap = [2, 1, 0, 5, 4, 3, 8, 7, 6];
     let placementScore = 0;
-    for (let i = 0; i < 9; i++) if (kfs[i] === 1) placementScore += KFS_POINTS[i];
+    for (let i = 0; i < 9; i++) {
+        if (kfs[i] === 1) {
+            // Use mirrored index for blue team's scoring
+            const pointIndex = team === 'blue' ? mirrorMap[i] : i;
+            placementScore += KFS_POINTS[pointIndex];
+        }
+    }
     if (team === 'red') state.redScore = placementScore;
     else state.blueScore = placementScore;
     const total = placementScore + (team === 'red' ? state.redKFSCollection * 10 + state.redWeapon * 10 : state.blueKFSCollection * 10 + state.blueWeapon * 10);
@@ -363,13 +374,18 @@ function renderKFS(team) {
     const grid = document.getElementById(team + 'KFS');
     const cells = grid.children;
     for (let i = 0; i < 9; i++) {
+        // Mirror index for opposite team view (left-right swap)
+        // 0→2, 1→1, 2→0 | 3→5, 4→4, 5→3 | 6→8, 7→7, 8→6
+        const mirrorMap = [2, 1, 0, 5, 4, 3, 8, 7, 6];
+        const displayIndex = team === 'blue' ? mirrorMap[i] : i;
+        
         cells[i].className = 'kfs-cell';
-        const sharedValue = state.kfsGrid[i];
+        const sharedValue = state.kfsGrid[displayIndex];
         
         // Check if this cell is taken by opponent
         const isTakenByOpponent = (team === 'red' && sharedValue === 2) || (team === 'blue' && sharedValue === 1);
         
-        if (kfs[i] === 1) { 
+        if (kfs[displayIndex] === 1) { 
             cells[i].classList.add(team); 
             cells[i].textContent = '🎯'; 
         } else if (isTakenByOpponent) {
@@ -387,9 +403,13 @@ function renderKFS(team) {
 
 function checkKungFuMaster(team) {
     const kfs = team === 'red' ? state.redKFS : state.blueKFS;
+    const mirrorMap = [2, 1, 0, 5, 4, 3, 8, 7, 6];
     for (let comb of WIN_COMBS) {
-        if (kfs[comb[0]] && kfs[comb[1]] && kfs[comb[2]]) {
+        // Mirror the combination for blue team
+        const mirroredComb = team === 'blue' ? comb.map(i => mirrorMap[i]) : comb;
+        if (kfs[mirroredComb[0]] && kfs[mirroredComb[1]] && kfs[mirroredComb[2]]) {
             const cells = document.getElementById(team + 'KFS').children;
+            // Highlight using original indices for display
             comb.forEach(i => cells[i].classList.add('kungfu'));
             const teamName = document.getElementById(team + 'Name').value;
             // Pause both timers
