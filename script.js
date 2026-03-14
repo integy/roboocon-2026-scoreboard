@@ -321,21 +321,69 @@ function toggleKFS(team, index) {
     // Check if this position is already taken by the other team (using shared index)
     const otherTeam = team === 'red' ? 'blue' : 'red';
     const otherKFS = otherTeam === 'red' ? state.redKFS : state.blueKFS;
+    const myKFS = team === 'red' ? state.redKFS : state.blueKFS;
+    const myWeapon = team === 'red' ? state.redWeapon : state.blueWeapon;
     
-    // If the other team already placed a KFS here, cannot place
+    // If the other team already placed a KFS here - use weapon to remove it!
     if (otherKFS[sharedIndex] === 1) {
-        alert('對手已經佔據呢個位置！');
+        if (myWeapon <= 0) {
+            alert('武器數量不足！需要至少 1 点武器才能移除對手的 KFS！');
+            return;
+        }
+        if (!confirm('使用 1 点武器移除對手的 KFS？')) return;
+        
+        saveUndoState();
+        
+        // Remove opponent's KFS from shared grid
+        state.kfsGrid[sharedIndex] = 0;
+        // Remove opponent's KFS from their array (use sharedIndex for opponent)
+        otherKFS[sharedIndex] = 0;
+        
+        // Decrease our weapon by 1 and update display
+        if (team === 'red') {
+            state.redWeapon = Math.max(0, state.redWeapon - 1);
+            document.getElementById('redWeapon').textContent = state.redWeapon;
+        } else {
+            state.blueWeapon = Math.max(0, state.blueWeapon - 1);
+            document.getElementById('blueWeapon').textContent = state.blueWeapon;
+        }
+        
+        renderKFS(team);
+        renderKFS(otherTeam);
+        calculateKFSScore(team);
+        calculateKFSScore(otherTeam);
+        updateScore(team);
+        
+        // Log the action
+        logScore(team, 'Weapon', -1, `使用武器移除對手 KFS #${sharedIndex+1}`);
+        soundManager.playScore();
         return;
     }
     
+    // If my own KFS is already here, just toggle it off
+    if (myKFS[index] === 1) {
+        saveUndoState();
+        myKFS[index] = 0;
+        
+        // Update shared grid: 0=empty, 1=red, 2=blue (use sharedIndex for mirror)
+        state.kfsGrid[sharedIndex] = 0;
+        
+        renderKFS(team);
+        renderKFS(otherTeam); // Update other team's grid too
+        calculateKFSScore(team);
+        calculateKFSScore(otherTeam);
+        logScore(team, 'KFS', -KFS_POINTS[index], `移除 KFS #${index+1}`);
+        soundManager.playScore();
+        return;
+    }
+    
+    // Place new KFS
     saveUndoState();
     const kfs = team === 'red' ? state.redKFS : state.blueKFS;
-    const wasPlaced = kfs[index];
-    kfs[index] = kfs[index] ? 0 : 1;
-    const isPlaced = kfs[index];
+    kfs[index] = 1;
     
     // Update shared grid: 0=empty, 1=red, 2=blue (use sharedIndex for mirror)
-    state.kfsGrid[sharedIndex] = isPlaced ? (team === 'red' ? 1 : 2) : 0;
+    state.kfsGrid[sharedIndex] = team === 'red' ? 1 : 2;
     
     renderKFS(team);
     renderKFS(otherTeam); // Update other team's grid too
@@ -343,8 +391,9 @@ function toggleKFS(team, index) {
     calculateKFSScore(otherTeam);
     checkKungFuMaster(team);
     checkKungFuMaster(otherTeam);
-    if (isPlaced && !wasPlaced) { const rowName = index < 3 ? '上排' : (index < 6 ? '中排' : '下排'); logScore(team, 'KFS', KFS_POINTS[index], `擺放 KFS #${index+1} (${rowName})`); }
-    else if (!isPlaced && wasPlaced) logScore(team, 'KFS', -KFS_POINTS[index], `移除 KFS #${index+1}`);
+    
+    const rowName = index < 3 ? '上排' : (index < 6 ? '中排' : '下排');
+    logScore(team, 'KFS', KFS_POINTS[index], `擺放 KFS #${index+1} (${rowName})`);
     soundManager.playScore();
 }
 
